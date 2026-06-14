@@ -94,6 +94,13 @@
                         TargetPageType="{x:Type local:CaptionPage}" />
                     <ui:NavigationViewItem
                         Margin="0,3,0,0"
+                        Content="ClearBridge"
+                        FontFamily="Bahnschrift"
+                        Icon="{ui:SymbolIcon Info24}"
+                        NavigationCacheMode="Disabled"
+                        TargetPageType="{x:Type local:ClearBridgePage}" />
+                    <ui:NavigationViewItem
+                        Margin="0,3,0,0"
                         Content="Setting"
                         FontFamily="Bahnschrift"
                         Icon="{ui:SymbolIcon Settings24}"
