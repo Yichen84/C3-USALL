@@ -1,16 +1,22 @@
 ﻿using System.IO;
 using System.Text;
+using System.Text.Json;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using CsvHelper;
 
 using LiveCaptionsTranslator.models;
+using LiveCaptionsTranslator.models.ClearBridge;
 
 namespace LiveCaptionsTranslator.utils
 {
     public static class SQLiteHistoryLogger
     {
         public static readonly string CONNECTION_STRING = "Data Source=translation_history.db;";
+        public const string FeatureTypeClearBridge = "ClearBridge";
+        public const string FeatureTypeLiveCaptions = "Live Captions";
+        public const string FeatureTypeOcr = "OCR";
+        public const string FeatureTypeTranslation = "Translation";
 
         private static SqliteConnection _sharedConnection;
         private static readonly object _connectionLock = new object();
@@ -31,8 +37,63 @@ namespace LiveCaptionsTranslator.utils
                     SourceText TEXT,
                     TranslatedText TEXT,
                     TargetLanguage TEXT,
-                    ApiUsed TEXT
+                    ApiUsed TEXT,
+                    FeatureType TEXT
                 );", GetConnection()))
+            {
+                command.ExecuteNonQuery();
+            }
+
+            EnsureColumnExists("TranslationHistory", "FeatureType", "TEXT");
+            NormalizeMissingTranslationFeatureTypes();
+
+            using (var command = new SqliteCommand(@"
+                CREATE TABLE IF NOT EXISTS ClearBridgeHistory (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Timestamp TEXT,
+                    SourceText TEXT,
+                    Summary TEXT,
+                    Priority TEXT,
+                    ActionsJson TEXT,
+                    OutputLanguage TEXT,
+                    ProviderName TEXT,
+                    IsMock INTEGER,
+                    FeatureType TEXT,
+                    ResultJson TEXT
+                );", GetConnection()))
+            {
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private static void NormalizeMissingTranslationFeatureTypes()
+        {
+            using (var command = new SqliteCommand(@"
+                UPDATE TranslationHistory
+                SET FeatureType = @FeatureType
+                WHERE FeatureType IS NULL OR FeatureType = ''",
+                GetConnection()))
+            {
+                command.Parameters.AddWithValue("@FeatureType", FeatureTypeLiveCaptions);
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private static void EnsureColumnExists(string tableName, string columnName, string columnType)
+        {
+            using (var command = new SqliteCommand($"PRAGMA table_info({tableName})", GetConnection()))
+            using (var reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    if (string.Equals(reader.GetString(1), columnName, StringComparison.OrdinalIgnoreCase))
+                        return;
+                }
+            }
+
+            using (var command = new SqliteCommand(
+                $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnType}",
+                GetConnection()))
             {
                 command.ExecuteNonQuery();
             }
@@ -65,12 +126,17 @@ namespace LiveCaptionsTranslator.utils
             }
         }
 
-        public static async Task LogTranslation(string sourceText, string translatedText,
-            string targetLanguage, string apiUsed, CancellationToken token = default)
+        public static async Task LogTranslation(
+            string sourceText,
+            string translatedText,
+            string targetLanguage,
+            string apiUsed,
+            CancellationToken token = default,
+            string featureType = FeatureTypeLiveCaptions)
         {
             string insertQuery = @"
-                INSERT INTO TranslationHistory (Timestamp, SourceText, TranslatedText, TargetLanguage, ApiUsed)
-                VALUES (@Timestamp, @SourceText, @TranslatedText, @TargetLanguage, @ApiUsed)";
+                INSERT INTO TranslationHistory (Timestamp, SourceText, TranslatedText, TargetLanguage, ApiUsed, FeatureType)
+                VALUES (@Timestamp, @SourceText, @TranslatedText, @TargetLanguage, @ApiUsed, @FeatureType)";
 
             using (var command = new SqliteCommand(insertQuery, GetConnection()))
             {
@@ -79,8 +145,78 @@ namespace LiveCaptionsTranslator.utils
                 command.Parameters.AddWithValue("@TranslatedText", translatedText);
                 command.Parameters.AddWithValue("@TargetLanguage", targetLanguage);
                 command.Parameters.AddWithValue("@ApiUsed", apiUsed);
+                command.Parameters.AddWithValue("@FeatureType", featureType);
                 await command.ExecuteNonQueryAsync(token);
             }
+        }
+
+        public static async Task LogClearBridgeAnalysis(
+            string sourceText,
+            CrisisActionAnalysisOutcome outcome,
+            string outputLanguage,
+            CancellationToken token = default)
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var actionsJson = JsonSerializer.Serialize(outcome.Result.Actions);
+            var resultJson = JsonSerializer.Serialize(outcome.Result);
+            var providerName = outcome.ProviderName;
+            var translatedText = FormatClearBridgeSummary(outcome.Result);
+
+            string insertQuery = @"
+                INSERT INTO ClearBridgeHistory
+                    (Timestamp, SourceText, Summary, Priority, ActionsJson, OutputLanguage, ProviderName, IsMock, FeatureType, ResultJson)
+                VALUES
+                    (@Timestamp, @SourceText, @Summary, @Priority, @ActionsJson, @OutputLanguage, @ProviderName, @IsMock, @FeatureType, @ResultJson)";
+
+            using (var command = new SqliteCommand(insertQuery, GetConnection()))
+            {
+                command.Parameters.AddWithValue("@Timestamp", timestamp);
+                command.Parameters.AddWithValue("@SourceText", sourceText);
+                command.Parameters.AddWithValue("@Summary", outcome.Result.Summary);
+                command.Parameters.AddWithValue("@Priority", outcome.Result.Priority);
+                command.Parameters.AddWithValue("@ActionsJson", actionsJson);
+                command.Parameters.AddWithValue("@OutputLanguage", outputLanguage);
+                command.Parameters.AddWithValue("@ProviderName", providerName);
+                command.Parameters.AddWithValue("@IsMock", outcome.IsMock ? 1 : 0);
+                command.Parameters.AddWithValue("@FeatureType", FeatureTypeClearBridge);
+                command.Parameters.AddWithValue("@ResultJson", resultJson);
+                await command.ExecuteNonQueryAsync(token);
+            }
+
+            await LogTranslation(
+                sourceText,
+                translatedText,
+                outputLanguage,
+                outcome.IsMock ? "ClearBridge (Mock)" : $"ClearBridge ({providerName})",
+                token,
+                FeatureTypeClearBridge);
+        }
+
+        private static string FormatClearBridgeSummary(CrisisActionAnalysisResult result)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine($"[ClearBridge] {result.Title}");
+            builder.AppendLine($"Priority: {result.Priority}");
+            builder.AppendLine(result.Summary);
+
+            if (result.Actions.Count > 0)
+            {
+                builder.AppendLine();
+                builder.AppendLine("Actions:");
+                foreach (var action in result.Actions)
+                {
+                    builder.Append("- ");
+                    builder.AppendLine(action.Task);
+                    if (!string.IsNullOrWhiteSpace(action.Deadline))
+                        builder.AppendLine($"  Deadline: {action.Deadline}");
+                    if (!string.IsNullOrWhiteSpace(action.Location))
+                        builder.AppendLine($"  Location: {action.Location}");
+                    if (action.RequiredDocuments.Count > 0)
+                        builder.AppendLine($"  Required documents: {string.Join(", ", action.RequiredDocuments)}");
+                }
+            }
+
+            return builder.ToString().Trim();
         }
 
         public static async Task<(List<TranslationHistoryEntry>, int)> LoadHistoryAsync(
@@ -91,7 +227,7 @@ namespace LiveCaptionsTranslator.utils
             using (var command = new SqliteCommand(@"
                 SELECT COUNT(*) 
                 FROM TranslationHistory
-                WHERE SourceText LIKE @search OR TranslatedText LIKE @search", GetConnection()))
+                WHERE SourceText LIKE @search OR TranslatedText LIKE @search OR FeatureType LIKE @search", GetConnection()))
 
             {
                 command.Parameters.AddWithValue("@search", $"%{searchText}%");
@@ -103,9 +239,9 @@ namespace LiveCaptionsTranslator.utils
             int offset = Math.Max(0, (page - 1) * maxRow);
 
             using (var command = new SqliteCommand(@"
-                SELECT Timestamp, SourceText, TranslatedText, TargetLanguage, ApiUsed
+                SELECT Timestamp, SourceText, TranslatedText, TargetLanguage, ApiUsed, FeatureType
                 FROM TranslationHistory
-                WHERE SourceText LIKE @search OR TranslatedText LIKE @search
+                WHERE SourceText LIKE @search OR TranslatedText LIKE @search OR FeatureType LIKE @search
                 ORDER BY Timestamp DESC
                 LIMIT @maxRow OFFSET @offset", GetConnection()))
 
@@ -137,7 +273,8 @@ namespace LiveCaptionsTranslator.utils
                             SourceText = reader.GetString(reader.GetOrdinal("SourceText")),
                             TranslatedText = reader.GetString(reader.GetOrdinal("TranslatedText")),
                             TargetLanguage = reader.GetString(reader.GetOrdinal("TargetLanguage")),
-                            ApiUsed = reader.GetString(reader.GetOrdinal("ApiUsed"))
+                            ApiUsed = reader.GetString(reader.GetOrdinal("ApiUsed")),
+                            FeatureType = GetNullableString(reader, "FeatureType", FeatureTypeLiveCaptions)
                         });
                     }
                 }
@@ -175,7 +312,7 @@ namespace LiveCaptionsTranslator.utils
         public static async Task<TranslationHistoryEntry?> LoadLastTranslation(CancellationToken token = default)
         {
             string selectQuery = @"
-                SELECT Timestamp, SourceText, TranslatedText, TargetLanguage, ApiUsed
+                SELECT Timestamp, SourceText, TranslatedText, TargetLanguage, ApiUsed, FeatureType
                 FROM TranslationHistory
                 ORDER BY Id DESC
                 LIMIT 1";
@@ -194,7 +331,8 @@ namespace LiveCaptionsTranslator.utils
                         SourceText = reader.GetString(reader.GetOrdinal("SourceText")),
                         TranslatedText = reader.GetString(reader.GetOrdinal("TranslatedText")),
                         TargetLanguage = reader.GetString(reader.GetOrdinal("TargetLanguage")),
-                        ApiUsed = reader.GetString(reader.GetOrdinal("ApiUsed"))
+                        ApiUsed = reader.GetString(reader.GetOrdinal("ApiUsed")),
+                        FeatureType = GetNullableString(reader, "FeatureType", FeatureTypeLiveCaptions)
                     };
                 }
                 return null;
@@ -217,7 +355,7 @@ namespace LiveCaptionsTranslator.utils
             var history = new List<TranslationHistoryEntry>();
 
             string selectQuery = @"
-                SELECT Timestamp, SourceText, TranslatedText, TargetLanguage, ApiUsed
+                SELECT Timestamp, SourceText, TranslatedText, TargetLanguage, ApiUsed, FeatureType
                 FROM TranslationHistory
                 ORDER BY Timestamp DESC";
 
@@ -235,7 +373,8 @@ namespace LiveCaptionsTranslator.utils
                         SourceText = reader.GetString(reader.GetOrdinal("SourceText")),
                         TranslatedText = reader.GetString(reader.GetOrdinal("TranslatedText")),
                         TargetLanguage = reader.GetString(reader.GetOrdinal("TargetLanguage")),
-                        ApiUsed = reader.GetString(reader.GetOrdinal("ApiUsed"))
+                        ApiUsed = reader.GetString(reader.GetOrdinal("ApiUsed")),
+                        FeatureType = GetNullableString(reader, "FeatureType", FeatureTypeLiveCaptions)
                     });
                 }
             }
@@ -243,6 +382,12 @@ namespace LiveCaptionsTranslator.utils
             using var writer = new StreamWriter(filePath, false, new UTF8Encoding(true));
             using var csvWriter = new CsvWriter(writer, CultureInfo.InvariantCulture);
             await csvWriter.WriteRecordsAsync(history, token);
+        }
+
+        private static string GetNullableString(SqliteDataReader reader, string columnName, string fallback)
+        {
+            var ordinal = reader.GetOrdinal(columnName);
+            return reader.IsDBNull(ordinal) ? fallback : reader.GetString(ordinal);
         }
 
         // DEPRECATED

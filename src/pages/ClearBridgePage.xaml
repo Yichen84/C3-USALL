@@ -1,0 +1,346 @@
+<Page
+    x:Class="LiveCaptionsTranslator.ClearBridgePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="ClearBridgePage"
+    JournalEntry.KeepAlive="False"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <DataTemplate x:Key="WrappingStringTemplate">
+            <TextBlock
+                Margin="0,0,0,6"
+                Text="{Binding}"
+                TextWrapping="Wrap" />
+        </DataTemplate>
+    </Page.Resources>
+
+    <ScrollViewer
+        x:Name="PageScrollViewer"
+        VerticalScrollBarVisibility="Auto">
+        <Grid
+            x:Name="PageContentGrid"
+            Background="Transparent"
+            Margin="16"
+            MaxWidth="980"
+            SizeChanged="RootGrid_SizeChanged">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                <TextBlock
+                    x:Name="TitleText"
+                    FontSize="24"
+                    FontWeight="SemiBold" />
+                <TextBlock
+                    x:Name="SubtitleText"
+                    Margin="0,3,0,0"
+                    Opacity="0.75"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <UniformGrid
+                Grid.Row="1"
+                Margin="0,0,0,12"
+                Columns="3">
+                <StackPanel Margin="0,0,10,0">
+                    <TextBlock x:Name="UiLanguageLabel" Margin="0,0,0,4" />
+                    <ComboBox
+                        x:Name="UiLanguageBox"
+                        MinHeight="30"
+                        SelectionChanged="UiLanguageBox_SelectionChanged" />
+                </StackPanel>
+                <StackPanel Margin="0,0,10,0">
+                    <TextBlock x:Name="ProviderLabel" Margin="0,0,0,4" />
+                    <ComboBox
+                        x:Name="ProviderBox"
+                        MinHeight="30" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock x:Name="OutputLanguageLabel" Margin="0,0,0,4" />
+                    <ComboBox
+                        x:Name="OutputLanguageBox"
+                        MinHeight="30" />
+                </StackPanel>
+            </UniformGrid>
+
+            <Border
+                Grid.Row="2"
+                Margin="0,0,0,12"
+                Padding="12"
+                BorderBrush="#22000000"
+                BorderThickness="1"
+                CornerRadius="6">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,6">
+                        <TextBlock
+                            x:Name="InputLabel"
+                            DockPanel.Dock="Left"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="CharacterCountText"
+                            DockPanel.Dock="Right"
+                            HorizontalAlignment="Right"
+                            Opacity="0.7" />
+                    </DockPanel>
+
+                    <TextBox
+                        x:Name="SourceTextBox"
+                        Grid.Row="1"
+                        MinHeight="150"
+                        AcceptsReturn="True"
+                        TextChanged="SourceTextBox_TextChanged"
+                        TextWrapping="Wrap"
+                        VerticalScrollBarVisibility="Disabled" />
+
+                    <StackPanel
+                        Grid.Row="2"
+                        Margin="0,10,0,0"
+                        Orientation="Horizontal">
+                        <Button
+                            x:Name="ExampleButton"
+                            MinWidth="110"
+                            Margin="0,0,8,0"
+                            Click="ExampleButton_Click" />
+                        <Button
+                            x:Name="ClearButton"
+                            MinWidth="80"
+                            Margin="0,0,8,0"
+                            Click="ClearButton_Click" />
+                        <Button
+                            x:Name="AnalyzeButton"
+                            MinWidth="100"
+                            Click="AnalyzeButton_Click" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border
+                Grid.Row="3"
+                Margin="0,0,0,12"
+                Padding="10"
+                BorderBrush="#22000000"
+                BorderThickness="1"
+                CornerRadius="6">
+                <StackPanel>
+                    <TextBlock
+                        x:Name="StatusTitleText"
+                        FontWeight="SemiBold" />
+                    <TextBlock
+                        x:Name="StatusText"
+                        Margin="0,4,0,0"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel
+                x:Name="ResultPanel"
+                Background="Transparent"
+                Grid.Row="4"
+                Visibility="Collapsed">
+                <Border
+                    x:Name="SummaryCard"
+                    Margin="0,0,0,12"
+                    Padding="12"
+                    BorderBrush="#22000000"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock
+                            x:Name="ResultTitleText"
+                            FontSize="20"
+                            FontWeight="SemiBold"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="PriorityText"
+                            Margin="0,6,0,0"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="SummaryHeaderText"
+                            Margin="0,12,0,4"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="SummaryText"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Grid x:Name="ImportantWarningsGrid" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition x:Name="ImportantColumn" Width="*" />
+                        <ColumnDefinition x:Name="ImportantWarningsGapColumn" Width="12" />
+                        <ColumnDefinition x:Name="WarningsColumn" Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition x:Name="ImportantWarningsGapRow" Height="0" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border
+                        x:Name="ImportantPointsCard"
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        Padding="12"
+                        BorderBrush="#22000000"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                        <StackPanel>
+                            <TextBlock x:Name="ImportantPointsHeaderText" FontWeight="SemiBold" />
+                            <ItemsControl
+                                x:Name="ImportantPointsList"
+                                Margin="0,6,0,0"
+                                ItemTemplate="{StaticResource WrappingStringTemplate}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        x:Name="WarningsCard"
+                        Grid.Column="2"
+                        Grid.Row="0"
+                        Padding="12"
+                        BorderBrush="#22000000"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                        <StackPanel>
+                            <TextBlock x:Name="WarningsHeaderText" FontWeight="SemiBold" />
+                            <ItemsControl
+                                x:Name="WarningsList"
+                                Margin="0,6,0,0"
+                                ItemTemplate="{StaticResource WrappingStringTemplate}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Border
+                    x:Name="ActionsCard"
+                    Margin="0,0,0,12"
+                    Padding="12"
+                    BorderBrush="#22000000"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock x:Name="ActionsHeaderText" FontWeight="SemiBold" />
+                        <ItemsControl x:Name="ActionsList" Margin="0,6,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Margin="0,0,0,8"
+                                        Padding="8"
+                                        BorderBrush="#16000000"
+                                        BorderThickness="0,1,0,0">
+                                        <StackPanel>
+                                            <CheckBox
+                                                IsChecked="{Binding Completed, Mode=TwoWay}">
+                                                <TextBlock
+                                                    Text="{Binding Task}"
+                                                    TextWrapping="Wrap" />
+                                            </CheckBox>
+                                            <TextBlock Text="{Binding DeadlineLine}" TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding LocationLine}" TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding RequiredDocumentsLine}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Grid x:Name="UnclearEvidenceGrid" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition x:Name="UnclearColumn" Width="*" />
+                        <ColumnDefinition x:Name="UnclearEvidenceGapColumn" Width="12" />
+                        <ColumnDefinition x:Name="EvidenceColumn" Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition x:Name="UnclearEvidenceGapRow" Height="0" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border
+                        x:Name="UnclearItemsCard"
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        Padding="12"
+                        BorderBrush="#22000000"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                        <StackPanel>
+                            <TextBlock x:Name="UnclearItemsHeaderText" FontWeight="SemiBold" />
+                            <ItemsControl
+                                x:Name="UnclearItemsList"
+                                Margin="0,6,0,0"
+                                ItemTemplate="{StaticResource WrappingStringTemplate}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        x:Name="EvidenceCard"
+                        Grid.Column="2"
+                        Grid.Row="0"
+                        Padding="12"
+                        BorderBrush="#22000000"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                        <StackPanel>
+                            <TextBlock x:Name="EvidenceHeaderText" FontWeight="SemiBold" />
+                            <ItemsControl x:Name="EvidenceList" Margin="0,6,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,0,0,8">
+                                            <TextBlock
+                                                FontWeight="SemiBold"
+                                                Text="{Binding Claim}"
+                                                TextWrapping="Wrap" />
+                                            <TextBlock
+                                                Opacity="0.75"
+                                                Text="{Binding SourceText}"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <StackPanel Margin="0,0,0,12" Orientation="Horizontal">
+                    <Button
+                        x:Name="CopySummaryButton"
+                        MinWidth="115"
+                        Margin="0,0,8,0"
+                        Click="CopySummaryButton_Click" />
+                    <Button
+                        x:Name="CopyActionPlanButton"
+                        MinWidth="130"
+                        Margin="0,0,8,0"
+                        Click="CopyActionPlanButton_Click" />
+                    <Button
+                        x:Name="SaveHistoryButton"
+                        MinWidth="115"
+                        Margin="0,0,8,0"
+                        Click="SaveHistoryButton_Click" />
+                    <Button
+                        x:Name="AnalyzeAgainButton"
+                        MinWidth="110"
+                        Click="AnalyzeAgainButton_Click" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Page>
