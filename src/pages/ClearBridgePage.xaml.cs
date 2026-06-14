@@ -1,6 +1,7 @@
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Wpf.Ui.Appearance;
 
 using LiveCaptionsTranslator.models.ClearBridge;
@@ -19,6 +20,7 @@ namespace LiveCaptionsTranslator
         private CrisisActionAnalysisOutcome? currentOutcome;
         private CancellationTokenSource? analyzeCancellation;
         private bool historySaved;
+        private bool resultCardsUseSingleColumn;
 
         public ClearBridgePage()
         {
@@ -55,6 +57,17 @@ namespace LiveCaptionsTranslator
         private void SourceTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             UpdateCharacterCount();
+        }
+
+        private void PageScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            PageScrollViewer.ScrollToVerticalOffset(PageScrollViewer.VerticalOffset - e.Delta);
+            e.Handled = true;
+        }
+
+        private void RootGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ApplyResponsiveResultLayout(e.NewSize.Width);
         }
 
         private void ExampleButton_Click(object sender, RoutedEventArgs e)
@@ -180,8 +193,7 @@ namespace LiveCaptionsTranslator
                     outputLanguage);
 
                 historySaved = true;
-                SaveHistoryButton.IsEnabled = false;
-                SaveHistoryButton.Content = localizer.T("ClearBridge.SavedToHistory");
+                ApplyHistoryButtonState();
 
                 if (showSuccess)
                     SetState(outcome.IsMock ? "MockMode" : "Completed", localizer.T("ClearBridge.History.Success"));
@@ -241,10 +253,8 @@ namespace LiveCaptionsTranslator
                     }
                 };
 
-            SaveHistoryButton.IsEnabled = !historySaved;
-            SaveHistoryButton.Content = historySaved
-                ? localizer.T("ClearBridge.SavedToHistory")
-                : localizer.T("ClearBridge.SaveToHistory");
+            ApplyHistoryButtonState();
+            ApplyResponsiveResultLayout(ActualWidth);
         }
 
         private List<string> BuildStringRows(List<string> values)
@@ -327,9 +337,7 @@ namespace LiveCaptionsTranslator
             EvidenceHeaderText.Text = localizer.T("ClearBridge.SourceEvidence");
             CopySummaryButton.Content = localizer.T("ClearBridge.CopySummary");
             CopyActionPlanButton.Content = localizer.T("ClearBridge.CopyActionPlan");
-            SaveHistoryButton.Content = historySaved
-                ? localizer.T("ClearBridge.SavedToHistory")
-                : localizer.T("ClearBridge.SaveToHistory");
+            ApplyHistoryButtonState();
             AnalyzeAgainButton.Content = localizer.T("ClearBridge.AnalyzeAgain");
             UpdateCharacterCount();
         }
@@ -349,6 +357,64 @@ namespace LiveCaptionsTranslator
             CopyActionPlanButton.IsEnabled = !isAnalyzing;
             SaveHistoryButton.IsEnabled = !isAnalyzing && currentOutcome != null && !historySaved;
             AnalyzeAgainButton.IsEnabled = !isAnalyzing;
+            ApplyHistoryButtonState();
+        }
+
+        private void ApplyHistoryButtonState()
+        {
+            if (SaveHistoryButton == null)
+                return;
+
+            SaveHistoryButton.Content = historySaved
+                ? localizer.T("ClearBridge.SavedToHistory")
+                : localizer.T("ClearBridge.SaveToHistory");
+            SaveHistoryButton.ToolTip = historySaved
+                ? localizer.T("ClearBridge.SavedToHistory.Detail")
+                : localizer.T("ClearBridge.SaveToHistory.Detail");
+
+            if (currentOutcome == null || historySaved)
+                SaveHistoryButton.IsEnabled = false;
+        }
+
+        private void ApplyResponsiveResultLayout(double width)
+        {
+            var useSingleColumn = width > 0 && width < 760;
+            if (useSingleColumn == resultCardsUseSingleColumn)
+                return;
+
+            resultCardsUseSingleColumn = useSingleColumn;
+            ApplyResponsivePairLayout(
+                ImportantWarningsGapColumn,
+                ImportantWarningsGapRow,
+                WarningsCard,
+                useSingleColumn);
+            ApplyResponsivePairLayout(
+                UnclearEvidenceGapColumn,
+                UnclearEvidenceGapRow,
+                EvidenceCard,
+                useSingleColumn);
+        }
+
+        private static void ApplyResponsivePairLayout(
+            ColumnDefinition gapColumn,
+            RowDefinition gapRow,
+            FrameworkElement secondCard,
+            bool useSingleColumn)
+        {
+            if (useSingleColumn)
+            {
+                gapColumn.Width = new GridLength(0);
+                gapRow.Height = new GridLength(12);
+                Grid.SetColumn(secondCard, 0);
+                Grid.SetRow(secondCard, 2);
+            }
+            else
+            {
+                gapColumn.Width = new GridLength(12);
+                gapRow.Height = new GridLength(0);
+                Grid.SetColumn(secondCard, 2);
+                Grid.SetRow(secondCard, 0);
+            }
         }
 
         private void SetState(string stateKey, string detail = "")

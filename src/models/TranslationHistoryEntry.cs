@@ -10,6 +10,7 @@ namespace LiveCaptionsTranslator.models
         public required string SourceText { get; set; }
         public required string TranslatedText { get; set; }
         public required string TargetLanguage { get; set; }
+        public required string FeatureType { get; set; }
         public required string ApiUsed { get; set; }
     }
 }

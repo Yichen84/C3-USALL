@@ -8,8 +8,23 @@
     JournalEntry.KeepAlive="False"
     mc:Ignorable="d">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid Margin="16" MaxWidth="980">
+    <Page.Resources>
+        <DataTemplate x:Key="WrappingStringTemplate">
+            <TextBlock
+                Margin="0,0,0,6"
+                Text="{Binding}"
+                TextWrapping="Wrap" />
+        </DataTemplate>
+    </Page.Resources>
+
+    <ScrollViewer
+        x:Name="PageScrollViewer"
+        PreviewMouseWheel="PageScrollViewer_PreviewMouseWheel"
+        VerticalScrollBarVisibility="Auto">
+        <Grid
+            Margin="16"
+            MaxWidth="980"
+            SizeChanged="RootGrid_SizeChanged">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -88,7 +103,7 @@
                         AcceptsReturn="True"
                         TextChanged="SourceTextBox_TextChanged"
                         TextWrapping="Wrap"
-                        VerticalScrollBarVisibility="Auto" />
+                        VerticalScrollBarVisibility="Disabled" />
 
                     <StackPanel
                         Grid.Row="2"
@@ -160,34 +175,49 @@
                     </StackPanel>
                 </Border>
 
-                <Grid Margin="0,0,0,12">
+                <Grid x:Name="ImportantWarningsGrid" Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition x:Name="ImportantColumn" Width="*" />
+                        <ColumnDefinition x:Name="ImportantWarningsGapColumn" Width="12" />
+                        <ColumnDefinition x:Name="WarningsColumn" Width="*" />
                     </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition x:Name="ImportantWarningsGapRow" Height="0" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
                     <Border
+                        x:Name="ImportantPointsCard"
                         Grid.Column="0"
+                        Grid.Row="0"
                         Padding="12"
                         BorderBrush="#22000000"
                         BorderThickness="1"
                         CornerRadius="6">
                         <StackPanel>
                             <TextBlock x:Name="ImportantPointsHeaderText" FontWeight="SemiBold" />
-                            <ItemsControl x:Name="ImportantPointsList" Margin="0,6,0,0" />
+                            <ItemsControl
+                                x:Name="ImportantPointsList"
+                                Margin="0,6,0,0"
+                                ItemTemplate="{StaticResource WrappingStringTemplate}" />
                         </StackPanel>
                     </Border>
 
                     <Border
+                        x:Name="WarningsCard"
                         Grid.Column="2"
+                        Grid.Row="0"
                         Padding="12"
                         BorderBrush="#22000000"
                         BorderThickness="1"
                         CornerRadius="6">
                         <StackPanel>
                             <TextBlock x:Name="WarningsHeaderText" FontWeight="SemiBold" />
-                            <ItemsControl x:Name="WarningsList" Margin="0,6,0,0" />
+                            <ItemsControl
+                                x:Name="WarningsList"
+                                Margin="0,6,0,0"
+                                ItemTemplate="{StaticResource WrappingStringTemplate}" />
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -210,8 +240,11 @@
                                         BorderThickness="0,1,0,0">
                                         <StackPanel>
                                             <CheckBox
-                                                Content="{Binding Task}"
-                                                IsChecked="{Binding Completed, Mode=TwoWay}" />
+                                                IsChecked="{Binding Completed, Mode=TwoWay}">
+                                                <TextBlock
+                                                    Text="{Binding Task}"
+                                                    TextWrapping="Wrap" />
+                                            </CheckBox>
                                             <TextBlock Text="{Binding DeadlineLine}" TextWrapping="Wrap" />
                                             <TextBlock Text="{Binding LocationLine}" TextWrapping="Wrap" />
                                             <TextBlock Text="{Binding RequiredDocumentsLine}" TextWrapping="Wrap" />
@@ -223,27 +256,39 @@
                     </StackPanel>
                 </Border>
 
-                <Grid Margin="0,0,0,12">
+                <Grid x:Name="UnclearEvidenceGrid" Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition x:Name="UnclearColumn" Width="*" />
+                        <ColumnDefinition x:Name="UnclearEvidenceGapColumn" Width="12" />
+                        <ColumnDefinition x:Name="EvidenceColumn" Width="*" />
                     </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition x:Name="UnclearEvidenceGapRow" Height="0" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
                     <Border
+                        x:Name="UnclearItemsCard"
                         Grid.Column="0"
+                        Grid.Row="0"
                         Padding="12"
                         BorderBrush="#22000000"
                         BorderThickness="1"
                         CornerRadius="6">
                         <StackPanel>
                             <TextBlock x:Name="UnclearItemsHeaderText" FontWeight="SemiBold" />
-                            <ItemsControl x:Name="UnclearItemsList" Margin="0,6,0,0" />
+                            <ItemsControl
+                                x:Name="UnclearItemsList"
+                                Margin="0,6,0,0"
+                                ItemTemplate="{StaticResource WrappingStringTemplate}" />
                         </StackPanel>
                     </Border>
 
                     <Border
+                        x:Name="EvidenceCard"
                         Grid.Column="2"
+                        Grid.Row="0"
                         Padding="12"
                         BorderBrush="#22000000"
                         BorderThickness="1"
