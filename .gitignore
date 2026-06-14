@@ -363,3 +363,10 @@ MigrationBackup/
 FodyWeavers.xsd
 
 .idea/
+
+# Local app settings and user data
+setting.json
+setting.json.bak
+translation_history.db
+translation_history.db-*
+[Ll]ogs/
