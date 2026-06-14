@@ -110,3 +110,25 @@ This document separates upstream functionality from hackathon work. Do not claim
   - Keeps submission evidence, AI disclosure, source attribution, testing status, and team contribution placeholders aligned with the actual Git history.
 - AI-assisted development:
   - Yes. Codex drafted the initial documentation based on this repository state and verification results.
+
+### ClearBridge Phase 1 Manual Test Fixes
+
+- Start date: 2026-06-14
+- Completion date: 2026-06-14
+- Corresponding commits:
+  - `c3dd880` - `fix(clearbridge): improve scrolling history and priority rules`
+- Corresponding files:
+  - `src/pages/ClearBridgePage.xaml`
+  - `src/pages/ClearBridgePage.xaml.cs`
+  - `src/services/ClearBridge/ClearBridgeLocalizationService.cs`
+  - `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
+  - `src/utils/HistoryLogger.cs`
+  - `src/models/TranslationHistoryEntry.cs`
+  - `src/pages/HistoryPage.xaml`
+  - `docs/PHASE1_TEST_REPORT.md`
+  - `docs/HACKATHON_BUILD_LOG.md`
+  - `docs/COMPETITION_CHANGES.md`
+- User value:
+  - Makes the ClearBridge text analysis page usable with normal mouse-wheel scrolling, prevents long results from being clipped, makes automatic History saving explicit, and lets History distinguish ClearBridge records from other app records.
+- AI-assisted development:
+  - Yes. Codex assisted with implementation, verification, and documentation.

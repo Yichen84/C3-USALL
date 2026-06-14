@@ -104,3 +104,67 @@ Add a standalone ClearBridge entry point to the existing LiveCaptions Translator
 - Commit message: `chore(clearbridge): protect local data and format whitespace`
 - Commit hash: `4d7bfd8`
 - Commit message: `docs(hackathon): document Phase 1 implementation`
+
+## 2026-06-14 - Phase 1 / ClearBridge Manual Test Fixes
+
+### Goal
+Fix issues found during manual ClearBridge Phase 1 testing: page mouse wheel behavior, result text clipping, History saved-state clarity, History feature categorization, and overly high priority tendencies from the prompt.
+
+### Work Completed
+- Routed mouse wheel events through the ClearBridge page-level `ScrollViewer` so wheel input over the main content scrolls the page.
+- Disabled the text input's nested vertical scrollbar to prevent it from trapping page wheel scrolling.
+- Updated result list rendering so Important Points, Warnings, Unclear Items, action tasks, and Source Evidence wrap instead of clipping.
+- Added responsive result card layout so paired cards switch to one column on narrow windows.
+- Changed the post-analysis History action to show a clear `Saved to History ✓` state after automatic save.
+- Added `FeatureType` to compatibility History records and normalized older missing values to `Live Captions`.
+- Added a Feature column to the existing History page without rebuilding the full History UI.
+- Added prompt priority criteria for low, medium, high, and urgent, including a warning not to default to high just because a notice contains a deadline.
+
+### Files Changed
+- `src/pages/ClearBridgePage.xaml`
+- `src/pages/ClearBridgePage.xaml.cs`
+- `src/services/ClearBridge/ClearBridgeLocalizationService.cs`
+- `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
+- `src/utils/HistoryLogger.cs`
+- `src/models/TranslationHistoryEntry.cs`
+- `src/pages/HistoryPage.xaml`
+- `docs/PHASE1_TEST_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/COMPETITION_CHANGES.md`
+
+### Technical Decisions
+- Kept the scrolling fix local to the ClearBridge page because repository inspection found no shared page-level `ScrollViewer` used by the main navigation container.
+- Used wrapping `TextBlock` templates and dynamic layout instead of fixed card heights so long source evidence and warnings remain visible.
+- Extended the existing History compatibility table with a small `FeatureType` column instead of redesigning the History system.
+- Preserved existing Live Captions history by treating missing legacy feature types as `Live Captions`.
+- Adjusted prompt guidance rather than hardcoding case-specific priorities, so real-provider output can vary across low, medium, high, and urgent based on source text.
+
+### AI Tools Used
+- Codex: repository inspection, implementation, verification, and documentation updates.
+- ChatGPT: no new separate usage recorded for this fix pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- Runtime AI option remains OpenAI-compatible API when configured by the user.
+- Mock Provider remains local fixed sample data and is not real AI.
+- Microsoft.Data.Sqlite is used by the existing local History storage.
+
+### Tests Performed
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with existing warnings and 0 errors.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o .\publish\x64\selfcontained -v minimal`: passed.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o .\publish\x64\framework -v minimal`: passed.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-arm64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o .\publish\arm64\selfcontained -v minimal`: passed.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-arm64 --self-contained false -p:PublishSingleFile=true -o .\publish\arm64\framework -v minimal`: passed.
+- Service smoke harness outside the repository (`D:\USALL\.tmp_clearbridge_smoke`): passed validation, Mock English/Chinese output, priority fallback, parser, cancellation, and ClearBridge History compatibility checks.
+- SQLite inspection confirmed the latest smoke History compatibility row used `FeatureType = ClearBridge`.
+
+### Known Limitations
+- Physical mouse-wheel and DPI screenshot evidence at 125% and 150% still needs to be captured manually for the final demo evidence package.
+- Real-provider priority variation across three non-Mock cases still needs manual execution with a configured OpenAI-compatible provider.
+- Parallel publish jobs can race on WPF temporary generated files in `obj`; sequential publish passed.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase1`
+- Commit hash: `c3dd880b905b4f7d3ec53476330370e480b75254`
+- Commit message: `fix(clearbridge): improve scrolling history and priority rules`

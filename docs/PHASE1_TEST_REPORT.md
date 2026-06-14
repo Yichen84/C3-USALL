@@ -295,6 +295,42 @@ The Word case library also defines error and exception tests. Current service-le
 - JSON/parsing issues found: None in smoke; invalid JSON produced the expected controlled error.
 - UI issues found: None from service smoke; desktop UI click-through still required.
 
+## 2026-06-14 Manual Fix Regression - ClearBridge Page
+
+This regression pass records fixes from manual testing on the ClearBridge Phase 1 page.
+
+| Area | Provider | Language | Result | Main Issue |
+| --- | --- | --- | --- | --- |
+| Mouse wheel scrolling | Mock | English / Simplified Chinese UI | Pass by code/build validation | The page now handles `PreviewMouseWheel` at the outer page `ScrollViewer`, and the text input no longer has an inner vertical scroll bar that can trap wheel input. |
+| Result text wrapping | Mock | English / Simplified Chinese UI | Pass by code/build validation | Important Points, Warnings, Unclear Items, action tasks, and Source Evidence now use wrapping text templates and dynamic height. |
+| Narrow window result cards | Mock | English / Simplified Chinese UI | Pass by code/build validation | Result card pairs switch from two columns to one column below 760 px; no fixed card height is used for dynamic content. |
+| History saved state | Mock | English / Simplified Chinese UI | Pass by service smoke | Automatic save leaves the bottom action in a clear `Saved to History ✓` state. |
+| History FeatureType | Mock | English | Pass by SQLite inspection | Latest compatibility History row is `ClearBridge (Mock)` with `FeatureType = ClearBridge`; missing legacy feature types are normalized to `Live Captions`. |
+| Priority prompt rules | OpenAI-compatible planned | English / Simplified Chinese | Pass by prompt review | The system prompt now defines low, medium, high, and urgent, and tells the model not to default to high just because a deadline exists. |
+
+Verification performed:
+
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with existing warnings and 0 errors.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o .\publish\x64\selfcontained -v minimal`: passed.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o .\publish\x64\framework -v minimal`: passed.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-arm64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o .\publish\arm64\selfcontained -v minimal`: passed.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-arm64 --self-contained false -p:PublishSingleFile=true -o .\publish\arm64\framework -v minimal`: passed.
+- Service smoke harness outside the repository (`D:\USALL\.tmp_clearbridge_smoke`): passed empty input, short input, missing language, unknown provider, Mock English/Chinese output, unknown priority fallback to medium, JSON action parsing, invalid JSON handling, cancellation, and ClearBridge History compatibility save.
+- SQLite inspection of the smoke database used by the run: latest `TranslationHistory` compatibility row has `ApiUsed = ClearBridge (Mock)` and `FeatureType = ClearBridge`.
+
+Notes:
+
+- Desktop visual evidence at 125% and 150% DPI still needs to be captured manually for the final demo package. The code path now avoids fixed result heights and nested page/input scroll trapping.
+- Three real-provider text cases still need manual or OpenAI-compatible execution to verify that the new priority prompt produces reasonable medium/high variation on live model output. Mock remains fixed and should not be used to fake those case outcomes.
+- Initial attempts to run publish jobs in parallel exposed WPF temporary generated file races in the shared `obj` folder. The same publish targets passed when run sequentially.
+
+Git evidence:
+
+- Branch: `feature/clearbridge-phase1`
+- Commit hash: `c3dd880b905b4f7d3ec53476330370e480b75254`
+- Commit message: `fix(clearbridge): improve scrolling history and priority rules`
+
 ## Recommendation
 
 Do not claim full Phase 1 case-library pass yet. TC-01 is validated through Mock in English and Simplified Chinese, and the remaining text cases are now established as the real-provider/manual acceptance baseline. Proceed to the next development step only after running TC-02 through TC-10 against a configured OpenAI-compatible provider or an approved manual QA session, and after completing desktop UI click-through evidence.
