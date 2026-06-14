@@ -25,6 +25,7 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] GitHub Actions passing.
 - [ ] Open-source attribution visible.
 - [ ] AI and data disclosure visible.
+- [x] Phase 1 text test baseline documented in `docs/PHASE1_TEST_REPORT.md`.
 - [ ] No `bin`, `obj`, `.vs`, API key, `setting.json`, `translation_history.db`, logs, or personal files committed.
 
 ## Current Capture Readiness
@@ -34,5 +35,8 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - Chinese output: service smoke passed; capture after desktop UI click-through.
 - English output: service smoke passed; capture after desktop UI click-through.
 - History save: service smoke passed through compatibility History write; capture after desktop UI click-through.
+- Text test case library: read and converted into Phase 1 baseline report.
+- TC-01 Mock English/Chinese: service smoke passed; capture UI evidence when recording demo.
+- TC-02 through TC-10: pending OpenAI-compatible provider/manual QA; do not claim as passed from Mock.
 - No committed sensitive files: source scan completed with no key-pattern matches.
 - GitHub Actions: pending after branch push.

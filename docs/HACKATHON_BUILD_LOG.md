@@ -48,6 +48,7 @@ Add a standalone ClearBridge entry point to the existing LiveCaptions Translator
 - `docs/SUBMISSION_DRAFT.md`
 - `docs/DEMO_EVIDENCE_CHECKLIST.md`
 - `docs/TEAM_CONTRIBUTIONS.md`
+- `docs/PHASE1_TEST_REPORT.md`
 
 ### Technical Decisions
 - Used a separate ClearBridge service namespace instead of copying the old translation API logic, so the action-analysis flow can evolve independently.
@@ -81,6 +82,8 @@ Add a standalone ClearBridge entry point to the existing LiveCaptions Translator
 - `dotnet publish -c Release -r win-arm64 --self-contained false -p:PublishSingleFile=true -o .\publish\arm64\framework -v minimal`: passed.
 - Service smoke harness outside the repository (`D:\USALL\.tmp_clearbridge_smoke`): passed Mock English/Chinese output, empty input, short input, missing language, unknown provider, invalid JSON, cancellation, priority fallback, and ClearBridge History compatibility save.
 - Sensitive-token scan for common OpenAI/API key patterns: no matches.
+- `ClearBridge_文本测试案例库.docx` was read as the Phase 1-3 acceptance baseline.
+- `docs/PHASE1_TEST_REPORT.md` records 10 text cases from the baseline. TC-01 was executed with Mock in English and Simplified Chinese and passed. TC-02 through TC-10 are recorded as OpenAI-compatible/manual QA baseline cases and were not run against Mock because Mock is intentionally fixed to TC-01.
 
 ### Known Limitations
 - Phase 1 supports only pasted text.
@@ -89,6 +92,7 @@ Add a standalone ClearBridge entry point to the existing LiveCaptions Translator
 - Existing app warnings remain; this phase does not attempt a broad warning cleanup.
 - No automated UI tests were added in Phase 1.
 - Visual desktop UI screenshot/click-through evidence still needs to be captured before final competition submission.
+- TC-02 through TC-10 require a configured OpenAI-compatible provider or approved manual QA; they should not be marked passed from Mock output.
 
 ### Git Evidence
 - Branch: `feature/clearbridge-phase1`
