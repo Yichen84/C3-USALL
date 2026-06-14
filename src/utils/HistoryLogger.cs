@@ -1,10 +1,12 @@
 ﻿using System.IO;
 using System.Text;
+using System.Text.Json;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using CsvHelper;
 
 using LiveCaptionsTranslator.models;
+using LiveCaptionsTranslator.models.ClearBridge;
 
 namespace LiveCaptionsTranslator.utils
 {
@@ -32,6 +34,24 @@ namespace LiveCaptionsTranslator.utils
                     TranslatedText TEXT,
                     TargetLanguage TEXT,
                     ApiUsed TEXT
+                );", GetConnection()))
+            {
+                command.ExecuteNonQuery();
+            }
+
+            using (var command = new SqliteCommand(@"
+                CREATE TABLE IF NOT EXISTS ClearBridgeHistory (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Timestamp TEXT,
+                    SourceText TEXT,
+                    Summary TEXT,
+                    Priority TEXT,
+                    ActionsJson TEXT,
+                    OutputLanguage TEXT,
+                    ProviderName TEXT,
+                    IsMock INTEGER,
+                    FeatureType TEXT,
+                    ResultJson TEXT
                 );", GetConnection()))
             {
                 command.ExecuteNonQuery();
@@ -81,6 +101,74 @@ namespace LiveCaptionsTranslator.utils
                 command.Parameters.AddWithValue("@ApiUsed", apiUsed);
                 await command.ExecuteNonQueryAsync(token);
             }
+        }
+
+        public static async Task LogClearBridgeAnalysis(
+            string sourceText,
+            CrisisActionAnalysisOutcome outcome,
+            string outputLanguage,
+            CancellationToken token = default)
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var actionsJson = JsonSerializer.Serialize(outcome.Result.Actions);
+            var resultJson = JsonSerializer.Serialize(outcome.Result);
+            var providerName = outcome.ProviderName;
+            var translatedText = FormatClearBridgeSummary(outcome.Result);
+
+            string insertQuery = @"
+                INSERT INTO ClearBridgeHistory
+                    (Timestamp, SourceText, Summary, Priority, ActionsJson, OutputLanguage, ProviderName, IsMock, FeatureType, ResultJson)
+                VALUES
+                    (@Timestamp, @SourceText, @Summary, @Priority, @ActionsJson, @OutputLanguage, @ProviderName, @IsMock, @FeatureType, @ResultJson)";
+
+            using (var command = new SqliteCommand(insertQuery, GetConnection()))
+            {
+                command.Parameters.AddWithValue("@Timestamp", timestamp);
+                command.Parameters.AddWithValue("@SourceText", sourceText);
+                command.Parameters.AddWithValue("@Summary", outcome.Result.Summary);
+                command.Parameters.AddWithValue("@Priority", outcome.Result.Priority);
+                command.Parameters.AddWithValue("@ActionsJson", actionsJson);
+                command.Parameters.AddWithValue("@OutputLanguage", outputLanguage);
+                command.Parameters.AddWithValue("@ProviderName", providerName);
+                command.Parameters.AddWithValue("@IsMock", outcome.IsMock ? 1 : 0);
+                command.Parameters.AddWithValue("@FeatureType", "ClearBridge");
+                command.Parameters.AddWithValue("@ResultJson", resultJson);
+                await command.ExecuteNonQueryAsync(token);
+            }
+
+            await LogTranslation(
+                sourceText,
+                translatedText,
+                outputLanguage,
+                outcome.IsMock ? "ClearBridge (Mock)" : $"ClearBridge ({providerName})",
+                token);
+        }
+
+        private static string FormatClearBridgeSummary(CrisisActionAnalysisResult result)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine($"[ClearBridge] {result.Title}");
+            builder.AppendLine($"Priority: {result.Priority}");
+            builder.AppendLine(result.Summary);
+
+            if (result.Actions.Count > 0)
+            {
+                builder.AppendLine();
+                builder.AppendLine("Actions:");
+                foreach (var action in result.Actions)
+                {
+                    builder.Append("- ");
+                    builder.AppendLine(action.Task);
+                    if (!string.IsNullOrWhiteSpace(action.Deadline))
+                        builder.AppendLine($"  Deadline: {action.Deadline}");
+                    if (!string.IsNullOrWhiteSpace(action.Location))
+                        builder.AppendLine($"  Location: {action.Location}");
+                    if (action.RequiredDocuments.Count > 0)
+                        builder.AppendLine($"  Required documents: {string.Join(", ", action.RequiredDocuments)}");
+                }
+            }
+
+            return builder.ToString().Trim();
         }
 
         public static async Task<(List<TranslationHistoryEntry>, int)> LoadHistoryAsync(
