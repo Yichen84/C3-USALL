@@ -18,6 +18,8 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] Cancel action.
 - [ ] English UI.
 - [ ] Simplified Chinese UI.
+- [ ] Long-result demo uses the right-side scrollbar.
+- [ ] Known mouse wheel limitation is disclosed if showing long results.
 
 ## Engineering Evidence
 
@@ -40,3 +42,6 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - TC-02 through TC-10: pending OpenAI-compatible provider/manual QA; do not claim as passed from Mock.
 - No committed sensitive files: source scan completed with no key-pattern matches.
 - GitHub Actions: pending after branch push.
+- ClearBridge result content: viewable with wrapping and responsive layout; capture using the right-side scrollbar for long outputs.
+- Mouse wheel over some result areas: accepted Phase 1 known issue; do not record or describe it as fully fixed.
+- Fixed local test package path: `D:\USALL\USALL-Git\test-build\ClearBridge-Latest\LiveCaptionsTranslator.exe`.

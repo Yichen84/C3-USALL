@@ -301,7 +301,7 @@ This regression pass records fixes from manual testing on the ClearBridge Phase 
 
 | Area | Provider | Language | Result | Main Issue |
 | --- | --- | --- | --- | --- |
-| Mouse wheel scrolling | Mock | English / Simplified Chinese UI | Pass by code/build validation | The page now handles `PreviewMouseWheel` at the outer page `ScrollViewer`, and the text input no longer has an inner vertical scroll bar that can trap wheel input. |
+| Mouse wheel scrolling | Mock | English / Simplified Chinese UI | Known Issue / Partially Accepted | The page can be browsed with the right-side scrollbar, but mouse wheel scrolling over some result areas is still not reliable in manual testing. |
 | Result text wrapping | Mock | English / Simplified Chinese UI | Pass by code/build validation | Important Points, Warnings, Unclear Items, action tasks, and Source Evidence now use wrapping text templates and dynamic height. |
 | Narrow window result cards | Mock | English / Simplified Chinese UI | Pass by code/build validation | Result card pairs switch from two columns to one column below 760 px; no fixed card height is used for dynamic content. |
 | History saved state | Mock | English / Simplified Chinese UI | Pass by service smoke | Automatic save leaves the bottom action in a clear `Saved to History ✓` state. |
@@ -376,11 +376,12 @@ Verification performed:
 - `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed.
 - Code inspection confirms the fix is limited to `ClearBridgePage.xaml` and `ClearBridgePage.xaml.cs`; no business logic, result content, provider logic, or History code changed.
 
-Manual acceptance still required:
+Manual acceptance result:
 
-- Re-run desktop mouse-wheel testing over Simple Summary, Important Points, Warnings, Action Checklist, Unclear Items, Source Evidence, and blank page space.
-- Confirm English and Simplified Chinese result pages both scroll from the center area.
-- Confirm Checklist checkboxes still toggle normally and the source input remains editable.
+- Follow-up manual testing still found unreliable mouse wheel scrolling over some result areas.
+- The right-side scrollbar works and allows the user to view all result content.
+- Checklist checkboxes still toggle normally and the source input remains editable.
+- This is accepted as a Phase 1 known issue and should not be described as fully fixed.
 
 Git evidence:
 
@@ -388,6 +389,31 @@ Git evidence:
 - Commit hash: `06ec68ddad71d21baaeea036c570be7bd707bdfc`
 - Commit message: `fix(clearbridge): forward mouse wheel from result controls`
 
+## 2026-06-15 Phase 1 Closeout - Accepted Scrollbar Workaround
+
+Final Phase 1 manual testing confirmed the ClearBridge result content is complete and usable, but mouse wheel behavior is still inconsistent in some result areas after analysis output is generated.
+
+Status:
+
+- Result area content displays fully with wrapping and responsive card layout.
+- The right-side page scrollbar works and can be used to browse from the top to the bottom of the generated result.
+- Mouse wheel scrolling over some result cards, checklist rows, and source evidence areas is not reliable.
+- The issue does not block the core Phase 1 flow: text analysis, Mock mode, OpenAI-compatible mode, checklist interaction, copy actions, History save, and result review remain usable.
+- Demo recording should use the right-side scrollbar when showing long results.
+- The remaining wheel behavior should be revisited later in a UI container/layout pass, ideally by standardizing the shared scroll container and avoiding competing WPF control-template scroll hosts.
+
+Fixed manual test package location:
+
+```text
+D:\USALL\USALL-Git\test-build\ClearBridge-Latest\LiveCaptionsTranslator.exe
+```
+
+Git evidence for the closeout documentation:
+
+- Branch: `feature/clearbridge-phase1`
+- Commit hash: this closeout commit
+- Commit message: `docs(hackathon): finalize Phase 1 test status`
+
 ## Recommendation
 
-Do not claim full Phase 1 case-library pass yet. TC-01 is validated through Mock in English and Simplified Chinese, and the remaining text cases are now established as the real-provider/manual acceptance baseline. Proceed to the next development step only after running TC-02 through TC-10 against a configured OpenAI-compatible provider or an approved manual QA session, and after completing desktop UI click-through evidence.
+Do not claim full Phase 1 case-library pass yet. TC-01 is validated through Mock in English and Simplified Chinese, and the remaining text cases are now established as the real-provider/manual acceptance baseline. For the Phase 1 demo, use the right-side scrollbar for long ClearBridge results and record mouse wheel behavior as a known issue rather than a completed fix.

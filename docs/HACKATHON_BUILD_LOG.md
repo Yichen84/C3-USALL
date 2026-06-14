@@ -168,3 +168,53 @@ Fix issues found during manual ClearBridge Phase 1 testing: page mouse wheel beh
 - Branch: `feature/clearbridge-phase1`
 - Commit hash: `c3dd880b905b4f7d3ec53476330370e480b75254`
 - Commit message: `fix(clearbridge): improve scrolling history and priority rules`
+
+## 2026-06-15 - Phase 1 / Test Package and Closeout Status
+
+### Goal
+Close Phase 1 for review by documenting the accepted mouse wheel limitation, preparing a fixed local test package location, and keeping the competition evidence honest about what is complete versus deferred.
+
+### Work Completed
+- Added `test-build/` to `.gitignore` so local manual test packages are never committed.
+- Established the fixed local test package path: `D:\USALL\USALL-Git\test-build\ClearBridge-Latest\LiveCaptionsTranslator.exe`.
+- Documented that ClearBridge result content is fully viewable with the right-side scrollbar.
+- Documented that mouse wheel scrolling over some result areas remains unreliable and is accepted as a Phase 1 known issue.
+- Documented that demo recording should use the right-side scrollbar for long ClearBridge results.
+- Deferred further scroll container work to a later UI layout pass instead of expanding Phase 1.
+
+### Files Changed
+- `.gitignore`
+- `docs/PHASE1_TEST_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+
+### Technical Decisions
+- Stopped further scrolling logic changes for Phase 1 because the core ClearBridge workflow is usable and the remaining issue is limited to mouse wheel routing over some result areas.
+- Standardized manual test builds under ignored `test-build/ClearBridge-Latest` so testers get one stable path instead of searching `bin` or `publish` directories.
+- Kept `BUILD_INFO.txt` inside the ignored test package so it records the exact branch, commit, build time, runtime, and known issue without entering Git history.
+
+### AI Tools Used
+- Codex: documentation updates, local build/package workflow, and PR preparation.
+- ChatGPT: no new separate usage recorded for this closeout pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- GitHub: remote branch push and pull request preparation.
+- Runtime AI option remains OpenAI-compatible API when configured by the user.
+- Mock Provider remains local fixed sample data and is not real AI.
+
+### Tests Performed
+- Final restore, format, Release build, and win-x64 self-contained publish are performed as part of the closeout package generation.
+- The fixed test package is generated under `test-build/ClearBridge-Latest` and includes a `BUILD_INFO.txt` file.
+- Package contents are checked so local settings, API keys, SQLite history databases, logs, and personal files are not intentionally included.
+
+### Known Limitations
+- Mouse wheel scrolling over some ClearBridge result areas remains unreliable after results are generated.
+- The right-side scrollbar works and should be used during Phase 1 demo recording.
+- This limitation does not block analysis, checklist interaction, copy actions, History save, or result review.
+- The scroll behavior should be revisited in a future shared UI scroll-container/layout pass.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase1`
+- Commit hash: this closeout commit
+- Commit message: `docs(hackathon): finalize Phase 1 test status`
