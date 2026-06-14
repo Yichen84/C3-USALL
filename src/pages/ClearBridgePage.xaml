@@ -19,9 +19,10 @@
 
     <ScrollViewer
         x:Name="PageScrollViewer"
-        PreviewMouseWheel="PageScrollViewer_PreviewMouseWheel"
         VerticalScrollBarVisibility="Auto">
         <Grid
+            x:Name="PageContentGrid"
+            Background="Transparent"
             Margin="16"
             MaxWidth="980"
             SizeChanged="RootGrid_SizeChanged">
@@ -147,9 +148,11 @@
 
             <StackPanel
                 x:Name="ResultPanel"
+                Background="Transparent"
                 Grid.Row="4"
                 Visibility="Collapsed">
                 <Border
+                    x:Name="SummaryCard"
                     Margin="0,0,0,12"
                     Padding="12"
                     BorderBrush="#22000000"
@@ -223,6 +226,7 @@
                 </Grid>
 
                 <Border
+                    x:Name="ActionsCard"
                     Margin="0,0,0,12"
                     Padding="12"
                     BorderBrush="#22000000"

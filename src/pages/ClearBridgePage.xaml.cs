@@ -21,6 +21,7 @@ namespace LiveCaptionsTranslator
         private CancellationTokenSource? analyzeCancellation;
         private bool historySaved;
         private bool resultCardsUseSingleColumn;
+        private MouseWheelEventArgs? forwardedMouseWheelEvent;
 
         public ClearBridgePage()
         {
@@ -33,6 +34,7 @@ namespace LiveCaptionsTranslator
             ProviderBox.SelectedItem = "Mock";
             OutputLanguageBox.ItemsSource = ClearBridgeOutputLanguages.Supported;
             OutputLanguageBox.SelectedItem = ClearBridgeOutputLanguages.English;
+            RegisterMouseWheelForwardingHandlers();
 
             Loaded += (s, e) =>
             {
@@ -59,10 +61,50 @@ namespace LiveCaptionsTranslator
             UpdateCharacterCount();
         }
 
-        private void PageScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        private void RegisterMouseWheelForwardingHandlers()
         {
-            PageScrollViewer.ScrollToVerticalOffset(PageScrollViewer.VerticalOffset - e.Delta);
+            UIElement[] wheelTargets =
+            [
+                PageContentGrid,
+                ResultPanel,
+                SummaryCard,
+                ImportantWarningsGrid,
+                ImportantPointsCard,
+                ImportantPointsList,
+                WarningsCard,
+                WarningsList,
+                ActionsCard,
+                ActionsList,
+                UnclearEvidenceGrid,
+                UnclearItemsCard,
+                UnclearItemsList,
+                EvidenceCard,
+                EvidenceList,
+                SourceTextBox
+            ];
+
+            foreach (var target in wheelTargets)
+            {
+                target.AddHandler(
+                    UIElement.PreviewMouseWheelEvent,
+                    new MouseWheelEventHandler(ForwardMouseWheelToPageScrollViewer),
+                    handledEventsToo: true);
+            }
+        }
+
+        private void ForwardMouseWheelToPageScrollViewer(object sender, MouseWheelEventArgs e)
+        {
             e.Handled = true;
+
+            if (ReferenceEquals(forwardedMouseWheelEvent, e))
+                return;
+
+            forwardedMouseWheelEvent = e;
+            PageScrollViewer.ScrollToVerticalOffset(
+                Math.Clamp(
+                    PageScrollViewer.VerticalOffset - e.Delta,
+                    0,
+                    PageScrollViewer.ScrollableHeight));
         }
 
         private void RootGrid_SizeChanged(object sender, SizeChangedEventArgs e)
