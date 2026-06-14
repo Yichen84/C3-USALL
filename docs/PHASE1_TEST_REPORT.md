@@ -331,6 +331,63 @@ Git evidence:
 - Commit hash: `c3dd880b905b4f7d3ec53476330370e480b75254`
 - Commit message: `fix(clearbridge): improve scrolling history and priority rules`
 
+## 2026-06-14 Follow-up Regression - Mouse Wheel Forwarding
+
+Manual testing found that the first scrolling fix was incomplete. After results were generated, dragging the right-side scrollbar worked, but mouse wheel input over the page center and result cards still did not move the page.
+
+Findings:
+
+- No `DataGrid`, `ListBox`, or `ListView` exists in `ClearBridgePage`.
+- The result area is built from `ItemsControl` instances for Important Points, Warnings, Actions, Unclear Items, and Source Evidence.
+- Checklist rows contain `CheckBox` controls inside an `ItemsControl` `DataTemplate`.
+- The input `TextBox` has its own WPF text editing scroll host even when the visible vertical scrollbar is disabled.
+- The earlier fix only attached a normal `PreviewMouseWheel` handler to the outer `ScrollViewer`; that did not reliably catch handled routed events from the result/control template subtree.
+
+Fix applied:
+
+- Removed the simple XAML-only outer `PreviewMouseWheel` handler.
+- Added `RegisterMouseWheelForwardingHandlers()` in `ClearBridgePage.xaml.cs`.
+- Registered `UIElement.PreviewMouseWheelEvent` with `handledEventsToo: true` on:
+  - the full page content grid
+  - the result panel
+  - Summary card
+  - Important Points card and `ItemsControl`
+  - Warnings card and `ItemsControl`
+  - Actions card and `ItemsControl`
+  - Unclear Items card and `ItemsControl`
+  - Source Evidence card and `ItemsControl`
+  - source input `TextBox`
+- Forwarded each captured wheel event to the outer `PageScrollViewer` with:
+
+```csharp
+PageScrollViewer.ScrollToVerticalOffset(
+    Math.Clamp(
+        PageScrollViewer.VerticalOffset - e.Delta,
+        0,
+        PageScrollViewer.ScrollableHeight));
+```
+
+- Added a one-event guard so the same routed mouse wheel event is not processed multiple times by nested registered containers.
+- Added transparent backgrounds to the main content grid and result panel so blank page areas can participate in hit testing.
+
+Verification performed:
+
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with existing warnings and 0 errors.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed.
+- Code inspection confirms the fix is limited to `ClearBridgePage.xaml` and `ClearBridgePage.xaml.cs`; no business logic, result content, provider logic, or History code changed.
+
+Manual acceptance still required:
+
+- Re-run desktop mouse-wheel testing over Simple Summary, Important Points, Warnings, Action Checklist, Unclear Items, Source Evidence, and blank page space.
+- Confirm English and Simplified Chinese result pages both scroll from the center area.
+- Confirm Checklist checkboxes still toggle normally and the source input remains editable.
+
+Git evidence:
+
+- Branch: `feature/clearbridge-phase1`
+- Commit hash: `06ec68ddad71d21baaeea036c570be7bd707bdfc`
+- Commit message: `fix(clearbridge): forward mouse wheel from result controls`
+
 ## Recommendation
 
 Do not claim full Phase 1 case-library pass yet. TC-01 is validated through Mock in English and Simplified Chinese, and the remaining text cases are now established as the real-provider/manual acceptance baseline. Proceed to the next development step only after running TC-02 through TC-10 against a configured OpenAI-compatible provider or an approved manual QA session, and after completing desktop UI click-through evidence.
