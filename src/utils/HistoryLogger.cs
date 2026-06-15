@@ -16,6 +16,9 @@ namespace LiveCaptionsTranslator.utils
         public const string FeatureTypeClearBridge = "ClearBridge";
         public const string FeatureTypeLiveCaptions = "Live Captions";
         public const string FeatureTypeOcr = "OCR";
+        public const string FeatureTypeOcrTranslation = "OCR Translation";
+        public const string FeatureTypeOcrSummary = "OCR Summary";
+        public const string FeatureTypeClearBridgeOcr = "ClearBridge OCR";
         public const string FeatureTypeTranslation = "Translation";
 
         private static SqliteConnection _sharedConnection;
@@ -45,6 +48,10 @@ namespace LiveCaptionsTranslator.utils
             }
 
             EnsureColumnExists("TranslationHistory", "FeatureType", "TEXT");
+            EnsureColumnExists("TranslationHistory", "InputType", "TEXT");
+            EnsureColumnExists("TranslationHistory", "OcrEngine", "TEXT");
+            EnsureColumnExists("TranslationHistory", "OcrWasCloudBased", "INTEGER");
+            EnsureColumnExists("TranslationHistory", "OcrTextEdited", "INTEGER");
             NormalizeMissingTranslationFeatureTypes();
 
             using (var command = new SqliteCommand(@"
@@ -59,11 +66,20 @@ namespace LiveCaptionsTranslator.utils
                     ProviderName TEXT,
                     IsMock INTEGER,
                     FeatureType TEXT,
-                    ResultJson TEXT
+                    ResultJson TEXT,
+                    InputType TEXT,
+                    OcrEngine TEXT,
+                    OcrWasCloudBased INTEGER,
+                    OcrTextEdited INTEGER
                 );", GetConnection()))
             {
                 command.ExecuteNonQuery();
             }
+
+            EnsureColumnExists("ClearBridgeHistory", "InputType", "TEXT");
+            EnsureColumnExists("ClearBridgeHistory", "OcrEngine", "TEXT");
+            EnsureColumnExists("ClearBridgeHistory", "OcrWasCloudBased", "INTEGER");
+            EnsureColumnExists("ClearBridgeHistory", "OcrTextEdited", "INTEGER");
         }
 
         private static void NormalizeMissingTranslationFeatureTypes()
@@ -154,7 +170,12 @@ namespace LiveCaptionsTranslator.utils
             string sourceText,
             CrisisActionAnalysisOutcome outcome,
             string outputLanguage,
-            CancellationToken token = default)
+            CancellationToken token = default,
+            ClearBridgeInputType inputType = ClearBridgeInputType.Text,
+            string ocrEngine = "",
+            bool? ocrWasCloudBased = null,
+            bool ocrTextEdited = false,
+            string featureType = FeatureTypeClearBridge)
         {
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
             var actionsJson = JsonSerializer.Serialize(outcome.Result.Actions);
@@ -164,9 +185,11 @@ namespace LiveCaptionsTranslator.utils
 
             string insertQuery = @"
                 INSERT INTO ClearBridgeHistory
-                    (Timestamp, SourceText, Summary, Priority, ActionsJson, OutputLanguage, ProviderName, IsMock, FeatureType, ResultJson)
+                    (Timestamp, SourceText, Summary, Priority, ActionsJson, OutputLanguage, ProviderName, IsMock, FeatureType, ResultJson,
+                     InputType, OcrEngine, OcrWasCloudBased, OcrTextEdited)
                 VALUES
-                    (@Timestamp, @SourceText, @Summary, @Priority, @ActionsJson, @OutputLanguage, @ProviderName, @IsMock, @FeatureType, @ResultJson)";
+                    (@Timestamp, @SourceText, @Summary, @Priority, @ActionsJson, @OutputLanguage, @ProviderName, @IsMock, @FeatureType, @ResultJson,
+                     @InputType, @OcrEngine, @OcrWasCloudBased, @OcrTextEdited)";
 
             using (var command = new SqliteCommand(insertQuery, GetConnection()))
             {
@@ -178,8 +201,14 @@ namespace LiveCaptionsTranslator.utils
                 command.Parameters.AddWithValue("@OutputLanguage", outputLanguage);
                 command.Parameters.AddWithValue("@ProviderName", providerName);
                 command.Parameters.AddWithValue("@IsMock", outcome.IsMock ? 1 : 0);
-                command.Parameters.AddWithValue("@FeatureType", FeatureTypeClearBridge);
+                command.Parameters.AddWithValue("@FeatureType", featureType);
                 command.Parameters.AddWithValue("@ResultJson", resultJson);
+                command.Parameters.AddWithValue("@InputType", inputType.ToString());
+                command.Parameters.AddWithValue("@OcrEngine", ocrEngine);
+                command.Parameters.AddWithValue(
+                    "@OcrWasCloudBased",
+                    ocrWasCloudBased.HasValue ? (object)(ocrWasCloudBased.Value ? 1 : 0) : DBNull.Value);
+                command.Parameters.AddWithValue("@OcrTextEdited", ocrTextEdited ? 1 : 0);
                 await command.ExecuteNonQueryAsync(token);
             }
 
@@ -187,9 +216,92 @@ namespace LiveCaptionsTranslator.utils
                 sourceText,
                 translatedText,
                 outputLanguage,
-                outcome.IsMock ? "ClearBridge (Mock)" : $"ClearBridge ({providerName})",
+                outcome.IsMock ? $"{featureType} (Mock)" : $"{featureType} ({providerName})",
                 token,
-                FeatureTypeClearBridge);
+                featureType);
+        }
+
+        public static async Task LogOcrTranslation(
+            string confirmedOcrText,
+            string translationResult,
+            string targetLanguage,
+            string translationProvider,
+            ClearBridgeInputType inputType,
+            string ocrEngine,
+            bool ocrWasCloudBased,
+            bool ocrTextEdited,
+            CancellationToken token = default)
+        {
+            await LogOcrTextResult(
+                confirmedOcrText,
+                translationResult,
+                targetLanguage,
+                translationProvider,
+                FeatureTypeOcrTranslation,
+                inputType,
+                ocrEngine,
+                ocrWasCloudBased,
+                ocrTextEdited,
+                token);
+        }
+
+        public static async Task LogOcrSummary(
+            string confirmedOcrText,
+            string summaryResult,
+            string summaryProvider,
+            ClearBridgeInputType inputType,
+            string ocrEngine,
+            bool ocrWasCloudBased,
+            bool ocrTextEdited,
+            CancellationToken token = default)
+        {
+            await LogOcrTextResult(
+                confirmedOcrText,
+                summaryResult,
+                "Summary",
+                summaryProvider,
+                FeatureTypeOcrSummary,
+                inputType,
+                ocrEngine,
+                ocrWasCloudBased,
+                ocrTextEdited,
+                token);
+        }
+
+        private static async Task LogOcrTextResult(
+            string sourceText,
+            string resultText,
+            string targetLanguage,
+            string provider,
+            string featureType,
+            ClearBridgeInputType inputType,
+            string ocrEngine,
+            bool ocrWasCloudBased,
+            bool ocrTextEdited,
+            CancellationToken token)
+        {
+            string insertQuery = @"
+                INSERT INTO TranslationHistory
+                    (Timestamp, SourceText, TranslatedText, TargetLanguage, ApiUsed, FeatureType,
+                     InputType, OcrEngine, OcrWasCloudBased, OcrTextEdited)
+                VALUES
+                    (@Timestamp, @SourceText, @TranslatedText, @TargetLanguage, @ApiUsed, @FeatureType,
+                     @InputType, @OcrEngine, @OcrWasCloudBased, @OcrTextEdited)";
+
+            using (var command = new SqliteCommand(insertQuery, GetConnection()))
+            {
+                command.Parameters.AddWithValue("@Timestamp", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                command.Parameters.AddWithValue("@SourceText", sourceText);
+                command.Parameters.AddWithValue("@TranslatedText", resultText);
+                command.Parameters.AddWithValue("@TargetLanguage", targetLanguage);
+                command.Parameters.AddWithValue("@ApiUsed", provider);
+                command.Parameters.AddWithValue("@FeatureType", featureType);
+                command.Parameters.AddWithValue("@InputType", inputType.ToString());
+                command.Parameters.AddWithValue("@OcrEngine", ocrEngine);
+                command.Parameters.AddWithValue("@OcrWasCloudBased", ocrWasCloudBased ? 1 : 0);
+                command.Parameters.AddWithValue("@OcrTextEdited", ocrTextEdited ? 1 : 0);
+                await command.ExecuteNonQueryAsync(token);
+            }
         }
 
         private static string FormatClearBridgeSummary(CrisisActionAnalysisResult result)

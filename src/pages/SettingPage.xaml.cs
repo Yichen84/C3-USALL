@@ -6,6 +6,7 @@ using Wpf.Ui.Appearance;
 
 using LiveCaptionsTranslator.models;
 using LiveCaptionsTranslator.services.Localization;
+using LiveCaptionsTranslator.services.Ocr;
 using LiveCaptionsTranslator.utils;
 using Wpf.Ui.Controls;
 
@@ -27,7 +28,7 @@ namespace LiveCaptionsTranslator
 
             Loaded += (s, e) =>
             {
-                (App.Current.MainWindow as MainWindow)?.AutoHeightAdjust(maxHeight: (int)App.Current.MainWindow.MinHeight);
+                (App.Current.MainWindow as MainWindow)?.AutoHeightAdjust(minHeight: 230, maxHeight: 260);
                 CheckForFirstUse();
                 ApplyLocalization();
             };
@@ -51,6 +52,8 @@ namespace LiveCaptionsTranslator
             SetFlyoutText(TargetLangInfoFlyout, "Settings.TargetLanguage.Info", 350);
             SetFlyoutText(CaptionLogMaxInfoFlyout, "Settings.Contexts.Info");
             SetFlyoutText(ContextAwareInfoFlyout, "Settings.ContextAware.Info");
+            ScreenOcrHotkeyLabel.Text = AppLocalizationService.T("Settings.ScreenOcrHotkey");
+            ApplyScreenOcrHotkeyButtonText.Text = AppLocalizationService.T("Settings.ScreenOcrHotkey.Apply");
             RefreshLiveCaptionsButtonText();
             isInitializing = false;
         }
@@ -126,6 +129,33 @@ namespace LiveCaptionsTranslator
                 SettingWindow.Closed += (sender, args) => SettingWindow = null;
                 SettingWindow.Show();
             }
+        }
+
+        private void ScreenOcrHotkeyEnabledSwitch_Changed(object sender, RoutedEventArgs e)
+        {
+            if (isInitializing)
+                return;
+
+            (App.Current.MainWindow as MainWindow)?.RefreshScreenOcrHotkey(showStatus: true);
+        }
+
+        private void ApplyScreenOcrHotkeyButton_Click(object sender, RoutedEventArgs e)
+        {
+            var value = ScreenOcrHotkeyBox.Text;
+            if (!ScreenOcrHotkeyService.TryNormalize(value, out var normalized))
+            {
+                SnackbarHost.Show(
+                    AppLocalizationService.T("Settings.ScreenOcrHotkey.Invalid"),
+                    AppLocalizationService.T("Settings.ScreenOcrHotkey.Invalid.Detail"),
+                    SnackbarType.Error,
+                    timeout: 4,
+                    closeButton: true);
+                return;
+            }
+
+            Translator.Setting.ScreenOcrHotkey = normalized;
+            ScreenOcrHotkeyBox.Text = normalized;
+            (App.Current.MainWindow as MainWindow)?.RefreshScreenOcrHotkey(showStatus: true);
         }
 
         private void Contexts_ValueChanged(object sender, NumberBoxValueChangedEventArgs args)

@@ -32,6 +32,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Margin="0,0,0,12">
@@ -80,6 +81,161 @@
                 BorderBrush="#22000000"
                 BorderThickness="1"
                 CornerRadius="6">
+                <StackPanel>
+                    <TextBlock
+                        x:Name="OcrToolsHeaderText"
+                        FontWeight="SemiBold" />
+                    <WrapPanel
+                        x:Name="OcrPrimaryEntryPanel"
+                        Margin="0,8,0,0">
+                        <Button
+                            x:Name="TextModeButton"
+                            MinWidth="120"
+                            Margin="0,0,8,8"
+                            Click="TextModeButton_Click" />
+                        <Button
+                            x:Name="CaptureScreenButton"
+                            MinWidth="190"
+                            Margin="0,0,8,8"
+                            FontWeight="SemiBold"
+                            Click="CaptureScreenButton_Click" />
+                        <Button
+                            x:Name="UploadImageButton"
+                            MinWidth="160"
+                            Margin="0,0,8,8"
+                            FontWeight="SemiBold"
+                            Click="UploadImageButton_Click" />
+                    </WrapPanel>
+                    <WrapPanel Margin="0,4,0,0">
+                        <StackPanel Margin="0,0,8,8">
+                            <TextBlock x:Name="OcrEngineLabel" Margin="0,0,0,4" />
+                            <ComboBox
+                                x:Name="OcrEngineBox"
+                                MinWidth="125"
+                                MinHeight="30" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,8,8">
+                            <TextBlock x:Name="OcrTranslationProviderLabel" Margin="0,0,0,4" />
+                            <ComboBox
+                                x:Name="OcrTranslationProviderBox"
+                                MinWidth="135"
+                                MinHeight="30"
+                                SelectionChanged="OcrTranslationProviderBox_SelectionChanged" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,8,8">
+                            <TextBlock x:Name="OcrTargetLanguageLabel" Margin="0,0,0,4" />
+                            <ComboBox
+                                x:Name="OcrTargetLanguageBox"
+                                MinWidth="120"
+                                MinHeight="30" />
+                        </StackPanel>
+                    </WrapPanel>
+
+                    <Grid
+                        x:Name="OcrReviewPanel"
+                        Margin="0,10,0,0"
+                        Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Grid.Column="0"
+                            Padding="6"
+                            BorderBrush="#22000000"
+                            BorderThickness="1"
+                            CornerRadius="4">
+                            <Image
+                                x:Name="OcrPreviewImage"
+                                MaxHeight="180"
+                                Stretch="Uniform" />
+                        </Border>
+
+                        <StackPanel Grid.Row="0" Grid.Column="2">
+                            <TextBlock
+                                x:Name="OcrReviewHeaderText"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                x:Name="OcrMetadataText"
+                                Margin="0,4,0,0"
+                                Opacity="0.75"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                x:Name="OcrReviewWarningText"
+                                Margin="0,6,0,0"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <WrapPanel Grid.Row="1" Grid.Column="2" Margin="0,10,0,0">
+                            <TextBlock
+                                x:Name="OcrBasicActionsLabel"
+                                Margin="0,6,8,8"
+                                FontWeight="SemiBold" />
+                            <Button
+                                x:Name="OcrTranslateButton"
+                                MinWidth="90"
+                                Margin="0,0,8,8"
+                                Click="OcrTranslateButton_Click" />
+                            <Button
+                                x:Name="OcrSummarizeButton"
+                                MinWidth="95"
+                                Margin="0,0,18,8"
+                                Click="OcrSummarizeButton_Click" />
+                            <TextBlock
+                                x:Name="OcrActionAnalysisLabel"
+                                Margin="0,6,8,8"
+                                FontWeight="SemiBold" />
+                            <Button
+                                x:Name="OcrClearBridgeAnalyzeButton"
+                                MinWidth="165"
+                                Margin="0,0,8,8"
+                                FontWeight="SemiBold"
+                                Click="OcrClearBridgeAnalyzeButton_Click" />
+                        </WrapPanel>
+
+                        <WrapPanel Grid.Row="2" Grid.Column="2" Margin="0,4,0,0">
+                            <Button
+                                x:Name="RetryOcrButton"
+                                MinWidth="90"
+                                Margin="0,0,8,8"
+                                Click="RetryOcrButton_Click" />
+                            <Button
+                                x:Name="RetryAiOcrButton"
+                                MinWidth="130"
+                                Margin="0,0,8,8"
+                                Click="RetryAiOcrButton_Click" />
+                            <Button
+                                x:Name="ClearOcrButton"
+                                MinWidth="80"
+                                Margin="0,0,8,8"
+                                Click="ClearOcrButton_Click" />
+                            <Button
+                                x:Name="CancelOcrButton"
+                                MinWidth="80"
+                                Margin="0,0,8,8"
+                                Click="CancelOcrButton_Click" />
+                        </WrapPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border
+                x:Name="TextInputCard"
+                Grid.Row="3"
+                Margin="0,0,0,12"
+                Padding="12"
+                BorderBrush="#22000000"
+                BorderThickness="1"
+                CornerRadius="6">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -109,6 +265,7 @@
                         VerticalScrollBarVisibility="Disabled" />
 
                     <StackPanel
+                        x:Name="TextInputActionsPanel"
                         Grid.Row="2"
                         Margin="0,10,0,0"
                         Orientation="Horizontal">
@@ -131,7 +288,7 @@
             </Border>
 
             <Border
-                Grid.Row="3"
+                Grid.Row="4"
                 Margin="0,0,0,12"
                 Padding="10"
                 BorderBrush="#22000000"
@@ -149,9 +306,87 @@
             </Border>
 
             <StackPanel
+                x:Name="TranslationResultPanel"
+                Background="Transparent"
+                Grid.Row="5"
+                Visibility="Collapsed">
+                <Border
+                    Margin="0,0,0,12"
+                    Padding="12"
+                    BorderBrush="#22000000"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock
+                            x:Name="TranslationResultHeaderText"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="TranslationResultMetadataText"
+                            Margin="0,6,0,0"
+                            Opacity="0.75"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="TranslationOriginalHeaderText"
+                            Margin="0,12,0,4"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="TranslationOriginalText"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="TranslationOutputHeaderText"
+                            Margin="0,12,0,4"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="TranslationOutputText"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel
+                x:Name="SummaryResultPanel"
+                Background="Transparent"
+                Grid.Row="5"
+                Visibility="Collapsed">
+                <Border
+                    Margin="0,0,0,12"
+                    Padding="12"
+                    BorderBrush="#22000000"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                    <StackPanel>
+                        <TextBlock
+                            x:Name="SummaryResultHeaderText"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="SummaryResultMetadataText"
+                            Margin="0,6,0,0"
+                            Opacity="0.75"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="SummaryOriginalHeaderText"
+                            Margin="0,12,0,4"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="SummaryOriginalText"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="SummaryOutputHeaderText"
+                            Margin="0,12,0,4"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="SummaryOutputText"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel
                 x:Name="ResultPanel"
                 Background="Transparent"
-                Grid.Row="4"
+                Grid.Row="5"
                 Visibility="Collapsed">
                 <Border
                     x:Name="SummaryCard"

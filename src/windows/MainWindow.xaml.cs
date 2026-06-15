@@ -1,10 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Interop;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
 using LiveCaptionsTranslator.services.Localization;
+using LiveCaptionsTranslator.services.Ocr;
 using LiveCaptionsTranslator.utils;
 using LiveCaptionsTranslator.Utils;
 using Button = Wpf.Ui.Controls.Button;
@@ -16,11 +18,18 @@ namespace LiveCaptionsTranslator
         public OverlayWindow? OverlayWindow { get; set; } = null;
         public bool IsAutoHeight { get; set; } = true;
 
+        private HwndSource? hwndSource;
+        private bool screenOcrHotkeyRegistered;
+        private bool screenOcrCaptureInProgress;
+
         public MainWindow()
         {
             InitializeComponent();
             ApplicationThemeManager.ApplySystemTheme();
             ApplyLocalization();
+
+            SourceInitialized += MainWindow_SourceInitialized;
+            Closed += MainWindow_Closed;
 
             Loaded += (s, e) =>
             {
@@ -46,6 +55,148 @@ namespace LiveCaptionsTranslator
 
             ToggleTopmost(Translator.Setting.MainWindow.Topmost);
             ShowLogCard(Translator.Setting.MainWindow.CaptionLogEnabled);
+        }
+
+        private void MainWindow_SourceInitialized(object? sender, EventArgs e)
+        {
+            hwndSource = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+            hwndSource?.AddHook(WndProc);
+            RefreshScreenOcrHotkey();
+        }
+
+        private void MainWindow_Closed(object? sender, EventArgs e)
+        {
+            UnregisterScreenOcrHotkey();
+            hwndSource?.RemoveHook(WndProc);
+            hwndSource = null;
+        }
+
+        public bool RefreshScreenOcrHotkey(bool showStatus = false)
+        {
+            if (hwndSource == null)
+                return true;
+
+            UnregisterScreenOcrHotkey();
+
+            if (Translator.Setting?.ScreenOcrHotkeyEnabled != true)
+            {
+                if (showStatus)
+                {
+                    SnackbarHost.Show(
+                        AppLocalizationService.T("Settings.ScreenOcrHotkey.Disabled"),
+                        AppLocalizationService.T("Settings.ScreenOcrHotkey.Disabled.Detail"),
+                        SnackbarType.Info,
+                        timeout: 3,
+                        closeButton: true);
+                }
+
+                return true;
+            }
+
+            var registration = ScreenOcrHotkeyService.Register(
+                hwndSource.Handle,
+                Translator.Setting.ScreenOcrHotkey);
+
+            if (registration.Status == ScreenOcrHotkeyStatus.Registered)
+            {
+                screenOcrHotkeyRegistered = true;
+                if (Translator.Setting.ScreenOcrHotkey != registration.NormalizedHotkey)
+                    Translator.Setting.ScreenOcrHotkey = registration.NormalizedHotkey;
+
+                if (showStatus)
+                {
+                    SnackbarHost.Show(
+                        AppLocalizationService.T("Settings.ScreenOcrHotkey.Applied"),
+                        registration.NormalizedHotkey,
+                        SnackbarType.Success,
+                        timeout: 3,
+                        closeButton: true);
+                }
+
+                return true;
+            }
+
+            var titleKey = registration.Status == ScreenOcrHotkeyStatus.Conflict
+                ? "Settings.ScreenOcrHotkey.Conflict"
+                : "Settings.ScreenOcrHotkey.Invalid";
+            var detailKey = registration.Status == ScreenOcrHotkeyStatus.Conflict
+                ? "Settings.ScreenOcrHotkey.Conflict.Detail"
+                : "Settings.ScreenOcrHotkey.Invalid.Detail";
+
+            SnackbarHost.Show(
+                AppLocalizationService.T(titleKey),
+                AppLocalizationService.T(detailKey),
+                SnackbarType.Error,
+                timeout: 5,
+                closeButton: true);
+            return false;
+        }
+
+        private void UnregisterScreenOcrHotkey()
+        {
+            if (!screenOcrHotkeyRegistered || hwndSource == null)
+                return;
+
+            ScreenOcrHotkeyService.Unregister(hwndSource.Handle);
+            screenOcrHotkeyRegistered = false;
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == ScreenOcrHotkeyService.WmHotkey &&
+                wParam.ToInt32() == ScreenOcrHotkeyService.HotkeyId)
+            {
+                handled = true;
+                _ = StartScreenOcrFromHotkeyAsync();
+            }
+
+            return IntPtr.Zero;
+        }
+
+        private async Task StartScreenOcrFromHotkeyAsync()
+        {
+            if (screenOcrCaptureInProgress)
+            {
+                SnackbarHost.Show(
+                    AppLocalizationService.T("Settings.ScreenOcrHotkey.Busy"),
+                    AppLocalizationService.T("Settings.ScreenOcrHotkey.Busy.Detail"),
+                    SnackbarType.Warning,
+                    timeout: 3,
+                    closeButton: true);
+                return;
+            }
+
+            screenOcrCaptureInProgress = true;
+            try
+            {
+                if (WindowState == WindowState.Minimized)
+                    WindowState = WindowState.Normal;
+
+                if (!IsVisible)
+                    Show();
+
+                RootNavigation.Navigate(typeof(ClearBridgePage));
+                await Dispatcher.InvokeAsync(
+                    () => { },
+                    System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
+                if (ClearBridgePage.Instance == null)
+                {
+                    SnackbarHost.Show(
+                        AppLocalizationService.T("Settings.ScreenOcrHotkey.NavigationFailed"),
+                        AppLocalizationService.T("Settings.ScreenOcrHotkey.NavigationFailed.Detail"),
+                        SnackbarType.Error,
+                        timeout: 4,
+                        closeButton: true);
+                    return;
+                }
+
+                await ClearBridgePage.Instance.StartScreenOcrCaptureAsync();
+            }
+            finally
+            {
+                screenOcrCaptureInProgress = false;
+            }
         }
 
         private void ApplyLocalization()
