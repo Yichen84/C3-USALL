@@ -512,6 +512,8 @@ Add real-world image and screen input for ClearBridge while preserving ordinary 
 - `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed after local platform analyzer suppression for the Windows OCR bridge.
 - `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 errors and existing nullable warnings.
 - `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with 0 errors and existing nullable warnings.
+- Fixed package generation at `test-build\ClearBridge-Latest`: passed.
+- Fixed package launch smoke: passed; the app process started successfully and was closed.
 - JSON parse checks for English, Simplified Chinese, and Arabic localization files: passed.
 - Manual OCR, DPI, dual-monitor, AI OCR, and provider-result QA are pending and tracked in `docs/PHASE3_OCR_TEST_REPORT.md`.
 

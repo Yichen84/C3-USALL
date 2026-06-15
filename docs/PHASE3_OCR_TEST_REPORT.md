@@ -57,6 +57,8 @@ OCR completion must stop at editable text review. It must not automatically call
 - `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 errors and existing nullable warnings.
 - `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with 0 errors and existing nullable warnings.
 - Latest publish output: `bin\Release\net8.0-windows10.0.19041.0\win-x64\publish`.
+- Fixed local test package: `test-build\ClearBridge-Latest\LiveCaptionsTranslator.exe`.
+- Fixed package launch smoke: passed; the app process started successfully and was closed.
 
 ## Known Limitations
 
