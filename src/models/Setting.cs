@@ -20,10 +20,12 @@ namespace LiveCaptionsTranslator.models
         private int numContexts = 2;
         private int displaySentences = 1;
         private bool contextAware = false;
+        private bool screenOcrHotkeyEnabled = true;
 
         private string apiName;
         private string targetLanguage;
         private string uiLanguage = "en";
+        private string screenOcrHotkey = "Ctrl + Alt + O";
         private string prompt;
         private string? ignoredUpdateVersion;
 
@@ -71,6 +73,15 @@ namespace LiveCaptionsTranslator.models
                 OnPropertyChanged("ContextAware");
             }
         }
+        public bool ScreenOcrHotkeyEnabled
+        {
+            get => screenOcrHotkeyEnabled;
+            set
+            {
+                screenOcrHotkeyEnabled = value;
+                OnPropertyChanged("ScreenOcrHotkeyEnabled");
+            }
+        }
 
         public string ApiName
         {
@@ -97,6 +108,15 @@ namespace LiveCaptionsTranslator.models
             {
                 uiLanguage = string.IsNullOrWhiteSpace(value) ? "en" : value;
                 OnPropertyChanged("UiLanguage");
+            }
+        }
+        public string ScreenOcrHotkey
+        {
+            get => string.IsNullOrWhiteSpace(screenOcrHotkey) ? "Ctrl + Alt + O" : screenOcrHotkey;
+            set
+            {
+                screenOcrHotkey = string.IsNullOrWhiteSpace(value) ? "Ctrl + Alt + O" : value;
+                OnPropertyChanged("ScreenOcrHotkey");
             }
         }
         public string Prompt

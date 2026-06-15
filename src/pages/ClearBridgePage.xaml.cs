@@ -19,6 +19,8 @@ namespace LiveCaptionsTranslator
     {
         public const int MIN_HEIGHT = 720;
 
+        public static ClearBridgePage? Instance { get; private set; }
+
         private readonly CrisisActionAnalysisService analysisService = new();
         private readonly ClearBridgeLocalizationService localizer = new();
         private readonly WindowsLocalOcrProvider localOcrProvider = new();
@@ -44,6 +46,7 @@ namespace LiveCaptionsTranslator
         public ClearBridgePage()
         {
             InitializeComponent();
+            Instance = this;
             ApplicationThemeManager.ApplySystemTheme();
 
             UiLanguageBox.ItemsSource = ClearBridgeLocalizationService.SupportedUiLanguages;
@@ -64,14 +67,22 @@ namespace LiveCaptionsTranslator
             RefreshOcrTargetLanguages();
             RegisterMouseWheelForwardingHandlers();
 
+            Unloaded += (s, e) =>
+            {
+                if (ReferenceEquals(Instance, this))
+                    Instance = null;
+            };
+
             Loaded += (s, e) =>
             {
+                Instance = this;
                 (App.Current.MainWindow as MainWindow)?.AutoHeightAdjust(
                     minHeight: MIN_HEIGHT,
                     maxHeight: MIN_HEIGHT);
             };
 
             ApplyLocalization();
+            ApplyInputModeState();
             UpdateCharacterCount();
             SetState("Ready");
             SetBusyUi(false);
@@ -147,16 +158,16 @@ namespace LiveCaptionsTranslator
 
         private void TextModeButton_Click(object sender, RoutedEventArgs e)
         {
-            currentInputType = ClearBridgeInputType.Text;
-            currentOcrImage = null;
-            currentOcrResult = null;
-            OcrPreviewImage.Source = null;
-            OcrReviewPanel.Visibility = Visibility.Collapsed;
-            HideResultPanels();
+            ClearOcrState(clearText: false);
             SetState("Ready");
         }
 
         private async void CaptureScreenButton_Click(object sender, RoutedEventArgs e)
+        {
+            await StartScreenOcrCaptureAsync();
+        }
+
+        public async Task StartScreenOcrCaptureAsync()
         {
             if (ocrCancellation != null || analyzeCancellation != null || textActionCancellation != null)
                 return;
@@ -292,9 +303,11 @@ namespace LiveCaptionsTranslator
 
         private void ExampleButton_Click(object sender, RoutedEventArgs e)
         {
+            ClearOcrState(clearText: false);
             SourceTextBox.Text = MockCrisisActionAnalysisProvider.SampleNotice;
             ProviderBox.SelectedItem = "Mock";
             currentInputType = ClearBridgeInputType.Text;
+            ApplyInputModeState();
             SetState("Ready");
         }
 
@@ -363,6 +376,7 @@ namespace LiveCaptionsTranslator
             currentInputType = inputType;
             OcrPreviewImage.Source = input.ToPreviewImage();
             OcrReviewPanel.Visibility = Visibility.Visible;
+            ApplyInputModeState();
             HideResultPanels();
             await RunOcrAsync(useAiOcr, requireCloudConfirmation: useAiOcr);
         }
@@ -388,6 +402,7 @@ namespace LiveCaptionsTranslator
                 var result = await provider.ExtractTextAsync(currentOcrImage, ocrCancellation.Token);
                 currentOcrResult = result;
                 SourceTextBox.Text = result.Text;
+                ApplyInputModeState();
                 UpdateOcrMetadata();
 
                 if (string.IsNullOrWhiteSpace(result.Text))
@@ -742,12 +757,39 @@ namespace LiveCaptionsTranslator
             }
 
             OcrMetadataText.Text = string.Join(" | ",
+                $"{localizer.T("ClearBridge.Ocr.Source")}: {currentOcrImage?.SourceName ?? string.Empty}",
                 $"{localizer.T("ClearBridge.Ocr.Engine")}: {currentOcrResult.EngineName}",
                 $"{localizer.T("ClearBridge.Ocr.Latency")}: {currentOcrResult.Duration.TotalMilliseconds:N0} ms",
                 $"{localizer.T("ClearBridge.Ocr.ImageSize")}: {currentOcrResult.ImageWidth} x {currentOcrResult.ImageHeight}",
                 currentOcrResult.IsCloudBased
                     ? localizer.T("ClearBridge.Ocr.CloudProcessing")
                     : localizer.T("ClearBridge.Ocr.LocalProcessing"));
+        }
+
+        private void ApplyInputModeState()
+        {
+            if (TextInputCard == null)
+                return;
+
+            var hasOcrInput = currentOcrImage != null || currentOcrResult != null;
+            var isTextMode = currentInputType == ClearBridgeInputType.Text && !hasOcrInput;
+
+            TextInputCard.Visibility = isTextMode || hasOcrInput
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            TextInputActionsPanel.Visibility = isTextMode
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            OcrReviewPanel.Visibility = hasOcrInput
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+            InputLabel.Text = isTextMode
+                ? localizer.T("ClearBridge.Input")
+                : localizer.T("ClearBridge.Ocr.ReviewExtractedText");
+            SourceTextBox.ToolTip = isTextMode
+                ? localizer.T("ClearBridge.Input.Placeholder")
+                : localizer.T("ClearBridge.Ocr.ReviewWarning");
         }
 
         private void ClearOcrState(bool clearText)
@@ -758,6 +800,7 @@ namespace LiveCaptionsTranslator
             OcrPreviewImage.Source = null;
             OcrMetadataText.Text = string.Empty;
             OcrReviewPanel.Visibility = Visibility.Collapsed;
+            ApplyInputModeState();
             HideResultPanels();
 
             if (clearText)
@@ -893,12 +936,10 @@ namespace LiveCaptionsTranslator
             RetryAiOcrButton.Content = localizer.T("ClearBridge.Ocr.RetryAiOcr");
             ClearOcrButton.Content = localizer.T("ClearBridge.Ocr.Clear");
             CancelOcrButton.Content = localizer.T("ClearBridge.Cancel");
-            InputLabel.Text = localizer.T("ClearBridge.Input");
-            SourceTextBox.ToolTip = localizer.T("ClearBridge.Input.Placeholder");
             ExampleButton.Content = localizer.T("ClearBridge.Example");
             ClearButton.Content = localizer.T("ClearBridge.Clear");
             AnalyzeButton.Content = analyzeCancellation == null
-                ? localizer.T("ClearBridge.Analyze")
+                ? localizer.T("ClearBridge.Ocr.ClearBridgeAnalyze")
                 : localizer.T("ClearBridge.Cancel");
             StatusTitleText.Text = localizer.T("ClearBridge.Status");
             ImportantPointsHeaderText.Text = localizer.T("ClearBridge.ImportantPoints");
@@ -910,6 +951,7 @@ namespace LiveCaptionsTranslator
             CopyActionPlanButton.Content = localizer.T("ClearBridge.CopyActionPlan");
             ApplyHistoryButtonState();
             AnalyzeAgainButton.Content = localizer.T("ClearBridge.AnalyzeAgain");
+            ApplyInputModeState();
             UpdateOcrMetadata();
             UpdateCharacterCount();
         }
@@ -923,7 +965,7 @@ namespace LiveCaptionsTranslator
         {
             AnalyzeButton.Content = isAnalyzing
                 ? localizer.T("ClearBridge.Cancel")
-                : localizer.T("ClearBridge.Analyze");
+                : localizer.T("ClearBridge.Ocr.ClearBridgeAnalyze");
             SourceTextBox.IsEnabled = !isAnalyzing;
             ProviderBox.IsEnabled = !isAnalyzing;
             OutputLanguageBox.IsEnabled = !isAnalyzing;

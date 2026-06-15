@@ -307,6 +307,41 @@
                     SelectedValuePath="Code"
                     SelectionChanged="UiLanguageBox_SelectionChanged" />
             </StackPanel>
+
+            <StackPanel Margin="15,10,0,0" Orientation="Vertical">
+                <TextBlock
+                    x:Name="ScreenOcrHotkeyLabel"
+                    Margin="2.5,0,0,5"
+                    Text="Screen OCR Hotkey" />
+                <ui:ToggleSwitch
+                    x:Name="ScreenOcrHotkeyEnabledSwitch"
+                    Width="100"
+                    Height="30"
+                    Padding="10,4,10,7"
+                    Checked="ScreenOcrHotkeyEnabledSwitch_Changed"
+                    IsChecked="{Binding ScreenOcrHotkeyEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    OffContent="Off"
+                    OnContent="On"
+                    Unchecked="ScreenOcrHotkeyEnabledSwitch_Changed" />
+                <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                    <TextBox
+                        x:Name="ScreenOcrHotkeyBox"
+                        Width="100"
+                        Height="30"
+                        Padding="8,4,8,4"
+                        FlowDirection="LeftToRight"
+                        Text="{Binding ScreenOcrHotkey, Mode=OneWay}" />
+                    <ui:Button
+                        x:Name="ApplyScreenOcrHotkeyButton"
+                        Width="60"
+                        Height="30"
+                        Margin="5,0,0,0"
+                        Padding="8,4,8,4"
+                        Click="ApplyScreenOcrHotkeyButton_Click">
+                        <TextBlock x:Name="ApplyScreenOcrHotkeyButtonText" Text="Apply" />
+                    </ui:Button>
+                </StackPanel>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Page>
