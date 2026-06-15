@@ -218,3 +218,95 @@ Close Phase 1 for review by documenting the accepted mouse wheel limitation, pre
 - Branch: `feature/clearbridge-phase1`
 - Commit hash: this closeout commit
 - Commit message: `docs(hackathon): finalize Phase 1 test status`
+
+## 2026-06-15 - Phase 2 / Multilingual Output and App UI Localization
+
+### Goal
+Extend ClearBridge beyond the Phase 1 English/Simplified Chinese demo by adding five ClearBridge output languages and app-wide English, Simplified Chinese, and Arabic UI localization with RTL support.
+
+### Work Completed
+- Added a shared app localization service backed by JSON resource files.
+- Added English, Simplified Chinese, and Arabic UI resource files.
+- Added persisted `UiLanguage` setting and a runtime UI language selector in Settings.
+- Localized main navigation, Settings, History, Caption copy messages, Info, Welcome, Overlay tooltips, API settings labels, and ClearBridge UI.
+- Added Arabic RTL handling for app containers and localized pages.
+- Kept API URLs, API keys, model names, provider-like controls, and source evidence source text left-to-right where appropriate.
+- Extended ClearBridge output languages to English, Simplified Chinese, Arabic, Spanish, and French.
+- Added fixed Mock Provider results for Arabic, Spanish, and French using the same structured model.
+- Updated the OpenAI-compatible ClearBridge prompt so generated fields use the selected output language while `source_evidence.source_text` preserves exact source wording.
+- Added `docs/PHASE2_LANGUAGE_TEST_REPORT.md`.
+- Deferred OCR, PDF, image input, real-time caption summarization, DeepSeek, additional providers, and scroll container redesign.
+
+### Files Changed
+- `LiveCaptionsTranslator.csproj`
+- `src/App.xaml.cs`
+- `src/models/Setting.cs`
+- `src/models/TranslationHistoryEntry.cs`
+- `src/services/Localization/AppLocalizationService.cs`
+- `src/assets/localization/en.json`
+- `src/assets/localization/zh-Hans.json`
+- `src/assets/localization/ar.json`
+- `src/services/ClearBridge/ClearBridgeLocalizationService.cs`
+- `src/services/ClearBridge/ClearBridgeOutputLanguages.cs`
+- `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
+- `src/services/ClearBridge/MockCrisisActionAnalysisProvider.cs`
+- `src/pages/ClearBridgePage.xaml`
+- `src/pages/ClearBridgePage.xaml.cs`
+- `src/pages/SettingPage.xaml`
+- `src/pages/SettingPage.xaml.cs`
+- `src/pages/HistoryPage.xaml`
+- `src/pages/HistoryPage.xaml.cs`
+- `src/pages/CaptionPage.xaml`
+- `src/pages/CaptionPage.xaml.cs`
+- `src/pages/InfoPage.xaml`
+- `src/pages/InfoPage.xaml.cs`
+- `src/windows/MainWindow.xaml`
+- `src/windows/MainWindow.xaml.cs`
+- `src/windows/OverlayWindow.xaml.cs`
+- `src/windows/SettingWindow.xaml.cs`
+- `src/windows/WelcomeWindow.xaml`
+- `src/windows/WelcomeWindow.xaml.cs`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/COMPETITION_CHANGES.md`
+- `docs/AI_AND_DATA_DISCLOSURE.md`
+- `docs/SUBMISSION_DRAFT.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+- `docs/PHASE2_LANGUAGE_TEST_REPORT.md`
+
+### Technical Decisions
+- Created a shared JSON-backed localization service because Phase 1 only had a ClearBridge-local dictionary and the upstream app had no reusable app-wide localization framework.
+- Kept the localization layer lightweight and page-driven instead of rewriting the WPF navigation architecture.
+- Preserved UI language and ClearBridge output language as independent selections because users may want, for example, Arabic UI with English analysis output.
+- Used native display names for UI language options so users can recognize their language even if the current UI language is unfamiliar.
+- Preserved original source evidence wording rather than translating `source_text`, which keeps major claims auditable.
+- Kept Mock Provider fixed and explicit as Mock Mode; it is not presented as real AI output.
+
+### AI Tools Used
+- Codex: repository inspection, implementation, build validation, and documentation updates.
+- ChatGPT: no new separate usage recorded in this Phase 2 implementation pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- Upstream open-source project: LiveCaptions Translator by SakiRinn and contributors.
+- Runtime AI option: OpenAI-compatible API when configured by the user.
+- Mock Provider: fixed local demo data in five output languages; not real AI.
+- Existing WPF-UI and Microsoft.Data.Sqlite dependencies remain in use.
+
+### Tests Performed
+- `dotnet restore .\LiveCaptionsTranslator.sln`: passed after allowing access to user NuGet configuration.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 warnings and 0 errors on the final incremental build.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with existing nullable warnings and 0 errors.
+- JSON parse checks for `en.json`, `zh-Hans.json`, and `ar.json`: passed.
+- `docs/PHASE2_LANGUAGE_TEST_REPORT.md` records Phase 2 language coverage and remaining manual visual QA items.
+
+### Known Limitations
+- Arabic UI visual click-through and screenshot evidence still needs final manual capture.
+- Existing Phase 1 mouse wheel behavior over some ClearBridge result areas remains unreliable and is not fixed by Phase 2.
+- Some long upstream explanatory text may still be simpler than a full professional localization pass; core navigation, settings, history, ClearBridge, and common dialogs are localized.
+- OpenAI-compatible multilingual output depends on the configured model following the prompt.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase2-language`
+- Commit hash: this Phase 2 commit
+- Commit message: `feat(localization): add multilingual UI and ClearBridge outputs`

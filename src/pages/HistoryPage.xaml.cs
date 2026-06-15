@@ -6,6 +6,7 @@ using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
 using LiveCaptionsTranslator.models;
+using LiveCaptionsTranslator.services.Localization;
 using LiveCaptionsTranslator.utils;
 using TextBlock = System.Windows.Controls.TextBlock;
 
@@ -26,6 +27,8 @@ namespace LiveCaptionsTranslator
         {
             InitializeComponent();
             ApplicationThemeManager.ApplySystemTheme();
+            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
+            ApplyLocalization();
 
             Loaded += async (s, e) =>
             {
@@ -37,9 +40,38 @@ namespace LiveCaptionsTranslator
             {
                 HistoryDataGrid.ItemsSource = null;
                 Translator.TranslationLogged -= OnTranslationLogged;
+                AppLocalizationService.LanguageChanged -= AppLocalizationService_LanguageChanged;
             };
 
             HistoryMaxRow.SelectionChanged += maxRow_SelectionChanged;
+        }
+
+        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                ApplyLocalization();
+                HistoryDataGrid.Items.Refresh();
+            });
+        }
+
+        private void ApplyLocalization()
+        {
+            HistoryRoot.FlowDirection = AppLocalizationService.CurrentFlowDirection;
+            PageDown.ToolTip = AppLocalizationService.T("History.Previous");
+            PageUp.ToolTip = AppLocalizationService.T("History.NextPage");
+            HistorySearchBox.PlaceholderText = AppLocalizationService.T("History.Search");
+            Export.ToolTip = AppLocalizationService.T("History.Export");
+            Delete.ToolTip = AppLocalizationService.T("History.DeleteAll");
+            Refresh.ToolTip = AppLocalizationService.T("History.Refresh");
+            if (HistoryDataGrid.Columns.Count >= 5)
+            {
+                HistoryDataGrid.Columns[0].Header = AppLocalizationService.T("History.Time");
+                HistoryDataGrid.Columns[1].Header = AppLocalizationService.T("History.Caption");
+                HistoryDataGrid.Columns[2].Header = AppLocalizationService.T("History.Translated");
+                HistoryDataGrid.Columns[3].Header = AppLocalizationService.T("History.Api");
+                HistoryDataGrid.Columns[4].Header = AppLocalizationService.T("History.Feature");
+            }
         }
 
         private async void OnTranslationLogged()
@@ -69,13 +101,13 @@ namespace LiveCaptionsTranslator
             {
                 Title = new TextBlock
                 {
-                    Text = "Do you want to delete all history?",
+                    Text = AppLocalizationService.T("History.DeleteDialog.Title"),
                     FontSize = 18,
                     FontWeight = FontWeights.Regular
                 },
-                Content = "This operation cannot be undone!",
-                PrimaryButtonText = "Yes",
-                CloseButtonText = "No",
+                Content = AppLocalizationService.T("History.DeleteDialog.Content"),
+                PrimaryButtonText = AppLocalizationService.T("History.DeleteDialog.Yes"),
+                CloseButtonText = AppLocalizationService.T("History.DeleteDialog.No"),
                 DefaultButton = ContentDialogButton.Close,
                 DialogHost = dialogHostContainer,
                 Padding = new Thickness(8, 4, 8, 8),
@@ -127,11 +159,17 @@ namespace LiveCaptionsTranslator
                 try
                 {
                     await SQLiteHistoryLogger.ExportToCSV(saveFileDialog.FileName);
-                    SnackbarHost.Show("Saved Success.", $"File saved to: {saveFileDialog.FileName}", SnackbarType.Success);
+                    SnackbarHost.Show(
+                        AppLocalizationService.T("History.Export.SuccessTitle"),
+                        AppLocalizationService.Format("History.Export.SuccessDetail", saveFileDialog.FileName),
+                        SnackbarType.Success);
                 }
                 catch (Exception ex)
                 {
-                    SnackbarHost.Show("Save Failed.", $"File saved faild:{ex.Message}", SnackbarType.Error);
+                    SnackbarHost.Show(
+                        AppLocalizationService.T("History.Export.FailedTitle"),
+                        AppLocalizationService.Format("History.Export.FailedDetail", ex.Message),
+                        SnackbarType.Error);
                 }
             }
         }

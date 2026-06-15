@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using Wpf.Ui.Controls;
 
 using LiveCaptionsTranslator.apis;
+using LiveCaptionsTranslator.services.Localization;
 using LiveCaptionsTranslator.Utils;
 using Button = Wpf.Ui.Controls.Button;
 using Color = System.Windows.Media.Color;
@@ -46,9 +47,15 @@ namespace LiveCaptionsTranslator
         {
             InitializeComponent();
             DataContext = Translator.Caption;
+            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
+            ApplyLocalization();
 
             Loaded += (s, e) => Translator.Caption.PropertyChanged += TranslatedChanged;
-            Unloaded += (s, e) => Translator.Caption.PropertyChanged -= TranslatedChanged;
+            Unloaded += (s, e) =>
+            {
+                Translator.Caption.PropertyChanged -= TranslatedChanged;
+                AppLocalizationService.LanguageChanged -= AppLocalizationService_LanguageChanged;
+            };
 
             OriginalCaption.FontWeight = Translator.Setting.OverlayWindow.FontBold == Utils.FontBold.Both ?
                 FontWeights.Bold : FontWeights.Regular;
@@ -66,6 +73,17 @@ namespace LiveCaptionsTranslator
 
             ApplyFontSize();
             ApplyBackgroundOpacity();
+        }
+
+        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
+        {
+            Dispatcher.Invoke(ApplyLocalization);
+        }
+
+        private void ApplyLocalization()
+        {
+            Title = AppLocalizationService.T("Main.Tooltip.OverlayWindow");
+            AppLocalizationService.ApplyTo(ControlPanel);
         }
 
         private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

@@ -4,6 +4,7 @@ using System.Windows;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
+using LiveCaptionsTranslator.services.Localization;
 using LiveCaptionsTranslator.utils;
 using LiveCaptionsTranslator.Utils;
 using Button = Wpf.Ui.Controls.Button;
@@ -19,6 +20,8 @@ namespace LiveCaptionsTranslator
         {
             InitializeComponent();
             ApplicationThemeManager.ApplySystemTheme();
+            ApplyLocalization();
+            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
 
             Loaded += (s, e) =>
             {
@@ -44,6 +47,32 @@ namespace LiveCaptionsTranslator
 
             ToggleTopmost(Translator.Setting.MainWindow.Topmost);
             ShowLogCard(Translator.Setting.MainWindow.CaptionLogEnabled);
+        }
+
+        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
+        {
+            Dispatcher.Invoke(ApplyLocalization);
+        }
+
+        private void ApplyLocalization()
+        {
+            Title = AppLocalizationService.T("App.Title");
+            FlowDirection = AppLocalizationService.CurrentFlowDirection;
+            MainContent.FlowDirection = AppLocalizationService.CurrentFlowDirection;
+            RootNavigation.FlowDirection = AppLocalizationService.CurrentFlowDirection;
+            DialogHostContainer.FlowDirection = AppLocalizationService.CurrentFlowDirection;
+
+            TitleBarText.Text = AppLocalizationService.T("App.Title");
+            CaptionNavItem.Content = AppLocalizationService.T("Nav.Caption");
+            ClearBridgeNavItem.Content = AppLocalizationService.T("Nav.ClearBridge");
+            SettingNavItem.Content = AppLocalizationService.T("Nav.Setting");
+            HistoryNavItem.Content = AppLocalizationService.T("Nav.History");
+            InfoNavItem.Content = AppLocalizationService.T("Nav.Info");
+
+            CaptionLogButton.ToolTip = AppLocalizationService.T("Main.Tooltip.LogCards");
+            LogOnlyButton.ToolTip = AppLocalizationService.T("Main.Tooltip.PauseTranslation");
+            OverlayModeButton.ToolTip = AppLocalizationService.T("Main.Tooltip.OverlayWindow");
+            TopmostButton.ToolTip = AppLocalizationService.T("Main.Tooltip.AlwaysOnTop");
         }
 
         private void TopmostButton_Click(object sender, RoutedEventArgs e)
@@ -180,7 +209,7 @@ namespace LiveCaptionsTranslator
             }
             catch (Exception ex)
             {
-                SnackbarHost.Show("[ERROR] Update Check Failed.", ex.Message, SnackbarType.Error,
+                SnackbarHost.Show(AppLocalizationService.T("Main.Update.CheckFailed"), ex.Message, SnackbarType.Error,
                     timeout: 2, closeButton: true);
 
                 return;
@@ -194,12 +223,10 @@ namespace LiveCaptionsTranslator
             {
                 var dialog = new Wpf.Ui.Controls.MessageBox
                 {
-                    Title = "New Version Available",
-                    Content = $"A new version has been detected: {latestVersion}\n" +
-                              $"Current version: {currentVersion}\n" +
-                              $"Please visit GitHub to download the latest release.",
-                    PrimaryButtonText = "Update",
-                    CloseButtonText = "Ignore this version"
+                    Title = AppLocalizationService.T("Main.Update.Title"),
+                    Content = AppLocalizationService.Format("Main.Update.Content", latestVersion, currentVersion),
+                    PrimaryButtonText = AppLocalizationService.T("Main.Update.Primary"),
+                    CloseButtonText = AppLocalizationService.T("Main.Update.Ignore")
                 };
                 var result = await dialog.ShowDialogAsync();
 
@@ -216,7 +243,7 @@ namespace LiveCaptionsTranslator
                     }
                     catch (Exception ex)
                     {
-                        SnackbarHost.Show("[ERROR] Open Browser Failed.", ex.Message, SnackbarType.Error,
+                        SnackbarHost.Show(AppLocalizationService.T("Main.Update.OpenBrowserFailed"), ex.Message, SnackbarType.Error,
                             timeout: 2, closeButton: true);
                     }
                 }

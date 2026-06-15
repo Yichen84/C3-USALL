@@ -10,7 +10,7 @@
     JournalEntry.KeepAlive="False"
     mc:Ignorable="d">
 
-    <Grid Margin="15">
+    <Grid x:Name="SettingsRoot" Margin="15">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="Auto" />
@@ -291,6 +291,21 @@
                         </TextBlock>
                     </ui:Flyout>
                 </StackPanel>
+            </StackPanel>
+
+            <StackPanel Margin="15,10,0,0" Orientation="Vertical">
+                <TextBlock
+                    x:Name="UiLanguageLabel"
+                    Margin="2.5,0,0,5"
+                    Text="UI Language" />
+                <ComboBox
+                    x:Name="UiLanguageBox"
+                    Width="150"
+                    Height="30"
+                    Padding="10,4,10,7"
+                    DisplayMemberPath="DisplayName"
+                    SelectedValuePath="Code"
+                    SelectionChanged="UiLanguageBox_SelectionChanged" />
             </StackPanel>
         </StackPanel>
     </Grid>

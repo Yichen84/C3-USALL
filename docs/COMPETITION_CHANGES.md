@@ -132,3 +132,70 @@ This document separates upstream functionality from hackathon work. Do not claim
   - Makes the ClearBridge text analysis page usable with normal mouse-wheel scrolling, prevents long results from being clipped, makes automatic History saving explicit, and lets History distinguish ClearBridge records from other app records.
 - AI-assisted development:
   - Yes. Codex assisted with implementation, verification, and documentation.
+
+### App-wide English / Chinese / Arabic UI Localization
+
+- Start date: 2026-06-15
+- Completion date: 2026-06-15
+- Corresponding commits:
+  - This Phase 2 commit - `feat(localization): add multilingual UI and ClearBridge outputs`
+- Corresponding files:
+  - `src/services/Localization/AppLocalizationService.cs`
+  - `src/assets/localization/en.json`
+  - `src/assets/localization/zh-Hans.json`
+  - `src/assets/localization/ar.json`
+  - `src/models/Setting.cs`
+  - `src/windows/MainWindow.xaml`
+  - `src/windows/MainWindow.xaml.cs`
+  - `src/pages/SettingPage.xaml`
+  - `src/pages/SettingPage.xaml.cs`
+  - `src/pages/HistoryPage.xaml`
+  - `src/pages/HistoryPage.xaml.cs`
+  - `src/pages/InfoPage.xaml`
+  - `src/pages/InfoPage.xaml.cs`
+  - `src/pages/CaptionPage.xaml`
+  - `src/pages/CaptionPage.xaml.cs`
+  - `src/windows/SettingWindow.xaml.cs`
+  - `src/windows/WelcomeWindow.xaml`
+  - `src/windows/WelcomeWindow.xaml.cs`
+  - `src/windows/OverlayWindow.xaml.cs`
+- User value:
+  - Lets users operate the app in English, Simplified Chinese, or Arabic, including runtime language switching and persisted preference.
+- AI-assisted development:
+  - Yes. Codex assisted with implementation, verification, and documentation.
+
+### Arabic RTL UI Support
+
+- Start date: 2026-06-15
+- Completion date: 2026-06-15
+- Corresponding commits:
+  - This Phase 2 commit - `feat(localization): add multilingual UI and ClearBridge outputs`
+- Corresponding files:
+  - `src/services/Localization/AppLocalizationService.cs`
+  - `src/windows/MainWindow.xaml.cs`
+  - `src/pages/ClearBridgePage.xaml`
+  - `src/pages/ClearBridgePage.xaml.cs`
+  - `src/pages/SettingPage.xaml.cs`
+  - `src/pages/HistoryPage.xaml.cs`
+  - `src/pages/InfoPage.xaml.cs`
+  - `src/windows/WelcomeWindow.xaml.cs`
+- User value:
+  - Makes the app more accessible to Arabic-speaking families while keeping technical strings such as API URLs, keys, model names, provider names, and source evidence readable.
+- AI-assisted development:
+  - Yes. Codex assisted with implementation and documentation.
+
+### ClearBridge Five-language Output
+
+- Start date: 2026-06-15
+- Completion date: 2026-06-15
+- Corresponding commits:
+  - This Phase 2 commit - `feat(localization): add multilingual UI and ClearBridge outputs`
+- Corresponding files:
+  - `src/services/ClearBridge/ClearBridgeOutputLanguages.cs`
+  - `src/services/ClearBridge/MockCrisisActionAnalysisProvider.cs`
+  - `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
+  - `src/pages/ClearBridgePage.xaml.cs`
+- User value:
+  - Allows ClearBridge analysis output in English, Simplified Chinese, Arabic, Spanish, or French while keeping UI language independent.
+- AI-assisted development:
+  - Yes. Codex assisted with implementation and documentation.

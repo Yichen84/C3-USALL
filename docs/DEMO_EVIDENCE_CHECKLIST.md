@@ -8,6 +8,9 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] Mock Mode label visible.
 - [ ] English output.
 - [ ] Simplified Chinese output.
+- [ ] Arabic output.
+- [ ] Spanish output.
+- [ ] French output.
 - [ ] Action Checklist with checkboxes.
 - [ ] Unclear Items section.
 - [ ] Source Evidence section.
@@ -18,6 +21,8 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] Cancel action.
 - [ ] English UI.
 - [ ] Simplified Chinese UI.
+- [ ] Arabic UI with RTL layout.
+- [ ] UI language and ClearBridge output language shown as independent controls.
 - [ ] Long-result demo uses the right-side scrollbar.
 - [ ] Known mouse wheel limitation is disclosed if showing long results.
 
@@ -28,6 +33,7 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] Open-source attribution visible.
 - [ ] AI and data disclosure visible.
 - [x] Phase 1 text test baseline documented in `docs/PHASE1_TEST_REPORT.md`.
+- [x] Phase 2 language test report documented in `docs/PHASE2_LANGUAGE_TEST_REPORT.md`.
 - [ ] No `bin`, `obj`, `.vs`, API key, `setting.json`, `translation_history.db`, logs, or personal files committed.
 
 ## Current Capture Readiness
@@ -36,6 +42,9 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - Mock Mode: service smoke passed; capture after desktop UI click-through.
 - Chinese output: service smoke passed; capture after desktop UI click-through.
 - English output: service smoke passed; capture after desktop UI click-through.
+- Arabic/Spanish/French output: Mock Provider branches implemented; capture after desktop UI click-through.
+- Arabic UI / RTL: implemented in code; capture after desktop UI click-through and high-DPI visual check.
+- UI/output independence: implemented with separate Settings UI language and ClearBridge output language controls; capture one mixed-language scenario.
 - History save: service smoke passed through compatibility History write; capture after desktop UI click-through.
 - Text test case library: read and converted into Phase 1 baseline report.
 - TC-01 Mock English/Chinese: service smoke passed; capture UI evidence when recording demo.

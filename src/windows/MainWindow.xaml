@@ -34,7 +34,10 @@
                 Height="27"
                 ShowMaximize="False">
                 <ui:TitleBar.Header>
-                    <ui:TextBlock Padding="15,0,0,0" VerticalAlignment="Center">LiveCaptions Translator</ui:TextBlock>
+                    <ui:TextBlock
+                        x:Name="TitleBarText"
+                        Padding="15,0,0,0"
+                        VerticalAlignment="Center">LiveCaptions Translator</ui:TextBlock>
                 </ui:TitleBar.Header>
                 <ui:TitleBar.TrailingContent>
                     <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
@@ -86,6 +89,7 @@
                 PaneDisplayMode="LeftMinimal">
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
+                        x:Name="CaptionNavItem"
                         Margin="0,6,0,3"
                         Content="Caption"
                         FontFamily="Bahnschrift"
@@ -93,6 +97,7 @@
                         NavigationCacheMode="Enabled"
                         TargetPageType="{x:Type local:CaptionPage}" />
                     <ui:NavigationViewItem
+                        x:Name="ClearBridgeNavItem"
                         Margin="0,3,0,0"
                         Content="ClearBridge"
                         FontFamily="Bahnschrift"
@@ -100,6 +105,7 @@
                         NavigationCacheMode="Disabled"
                         TargetPageType="{x:Type local:ClearBridgePage}" />
                     <ui:NavigationViewItem
+                        x:Name="SettingNavItem"
                         Margin="0,3,0,0"
                         Content="Setting"
                         FontFamily="Bahnschrift"
@@ -107,6 +113,7 @@
                         NavigationCacheMode="Required"
                         TargetPageType="{x:Type local:SettingPage}" />
                     <ui:NavigationViewItem
+                        x:Name="HistoryNavItem"
                         Margin="0,3,0,0"
                         Content="History"
                         FontFamily="Bahnschrift"
@@ -114,6 +121,7 @@
                         NavigationCacheMode="Disabled"
                         TargetPageType="{x:Type local:HistoryPage}" />
                     <ui:NavigationViewItem
+                        x:Name="InfoNavItem"
                         Margin="0,3,0,0"
                         Content="Info"
                         FontFamily="Bahnschrift"

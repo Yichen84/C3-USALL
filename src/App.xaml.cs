@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 
+using LiveCaptionsTranslator.services.Localization;
 using LiveCaptionsTranslator.utils;
 
 namespace LiveCaptionsTranslator
@@ -9,6 +10,7 @@ namespace LiveCaptionsTranslator
         App()
         {
             AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+            AppLocalizationService.Initialize(Translator.Setting?.UiLanguage);
             Translator.Setting?.Save();
 
             Task.Run(() => Translator.SyncLoop());

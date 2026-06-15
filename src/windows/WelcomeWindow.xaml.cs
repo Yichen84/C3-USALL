@@ -4,6 +4,8 @@ using System.Windows.Navigation;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Appearance;
 
+using LiveCaptionsTranslator.services.Localization;
+
 namespace LiveCaptionsTranslator
 {
     public partial class WelcomeWindow : FluentWindow
@@ -12,6 +14,8 @@ namespace LiveCaptionsTranslator
         {
             InitializeComponent();
             ApplicationThemeManager.ApplySystemTheme();
+            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
+            ApplyLocalization();
 
             Loaded += (s, e) =>
             {
@@ -21,6 +25,23 @@ namespace LiveCaptionsTranslator
                     true
                 );
             };
+            Closed += (s, e) =>
+                AppLocalizationService.LanguageChanged -= AppLocalizationService_LanguageChanged;
+        }
+
+        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
+        {
+            Dispatcher.Invoke(ApplyLocalization);
+        }
+
+        private void ApplyLocalization()
+        {
+            FlowDirection = AppLocalizationService.CurrentFlowDirection;
+            Title = AppLocalizationService.T("Welcome.Title");
+            WelcomeTitleBarText.Text = AppLocalizationService.T("Welcome.Title");
+            WelcomeHeadingText.Text = AppLocalizationService.T("Welcome.Heading");
+            WelcomeBodyText.Text = AppLocalizationService.T("Welcome.Body");
+            WelcomeCloseButton.Content = AppLocalizationService.T("Welcome.Close");
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
@@ -35,4 +56,3 @@ namespace LiveCaptionsTranslator
         }
     }
 }
-

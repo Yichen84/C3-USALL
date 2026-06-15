@@ -37,11 +37,12 @@ ClearBridge converts pasted notice text into:
 ## How It Works
 
 1. User pastes a notice.
-2. User chooses English or Simplified Chinese output.
+2. User chooses English, Simplified Chinese, Arabic, Spanish, or French output.
 3. User chooses Mock Mode or an OpenAI-compatible provider.
 4. ClearBridge returns a structured action plan.
 5. User can copy the summary or action plan.
 6. Result is saved to local History.
+7. User can switch the app UI between English, Simplified Chinese, and Arabic independently from the analysis output language.
 
 ## AI Use
 
@@ -77,6 +78,9 @@ Built on top of LiveCaptions Translator by SakiRinn and contributors. The upstre
 - Navigation entry.
 - ClearBridge History storage.
 - English and Simplified Chinese ClearBridge UI strings.
+- App-wide English, Simplified Chinese, and Arabic UI localization.
+- Arabic RTL UI support.
+- ClearBridge output in English, Simplified Chinese, Arabic, Spanish, and French.
 - Hackathon documentation and disclosure files.
 
 ## Challenges
@@ -95,7 +99,7 @@ Built on top of LiveCaptions Translator by SakiRinn and contributors. The upstre
 - OCR input.
 - PDF support.
 - Image upload.
-- More output languages.
+- More complete professional localization review.
 - Reminder and calendar integrations with explicit user approval.
 - Better automated UI tests.
 - Expanded provider options.
@@ -113,7 +117,8 @@ To be completed by the team with real names, roles, and evidence. Do not invent 
 5. Show Simple Summary, Action Checklist, Unclear Items, and Source Evidence.
 6. Copy Action Plan.
 7. Open History and show saved ClearBridge summary.
-8. Switch UI language between English and Simplified Chinese.
+8. Switch UI language between English, Simplified Chinese, and Arabic.
+9. Show that UI language and ClearBridge output language are independent, for example Arabic UI with English output.
 
 ## Repository Link
 

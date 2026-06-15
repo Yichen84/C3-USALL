@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 
+using LiveCaptionsTranslator.services.Localization;
 using LiveCaptionsTranslator.utils;
 
 namespace LiveCaptionsTranslator
@@ -20,6 +21,8 @@ namespace LiveCaptionsTranslator
             InitializeComponent();
             DataContext = Translator.Caption;
             instance = this;
+            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
+            ApplyLocalization();
 
             Loaded += (s, e) =>
             {
@@ -36,6 +39,18 @@ namespace LiveCaptionsTranslator
             CollapseTranslatedCaption(Translator.Setting.MainWindow.CaptionLogEnabled);
         }
 
+        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
+        {
+            Dispatcher.Invoke(ApplyLocalization);
+        }
+
+        private void ApplyLocalization()
+        {
+            CaptionRoot.FlowDirection = AppLocalizationService.CurrentFlowDirection;
+            OriginalCaption.ToolTip = AppLocalizationService.T("Caption.ClickToCopy");
+            TranslatedCaption.ToolTip = AppLocalizationService.T("Caption.ClickToCopy");
+        }
+
         private async void TextBlock_MouseLeftButtonDown(object sender, RoutedEventArgs e)
         {
             if (sender is TextBlock textBlock)
@@ -43,11 +58,11 @@ namespace LiveCaptionsTranslator
                 try
                 {
                     Clipboard.SetText(textBlock.Text);
-                    SnackbarHost.Show("Copied.", textBlock.Text, SnackbarType.Info, 100);
+                    SnackbarHost.Show(AppLocalizationService.T("Common.Copied"), textBlock.Text, SnackbarType.Info, 100);
                 }
                 catch
                 {
-                    SnackbarHost.Show("Copy Failed.", string.Empty, SnackbarType.Error, 100);
+                    SnackbarHost.Show(AppLocalizationService.T("Common.CopyFailed"), string.Empty, SnackbarType.Error, 100);
                 }
                 await Task.Delay(500);
             }
