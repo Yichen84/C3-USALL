@@ -21,7 +21,6 @@ namespace LiveCaptionsTranslator
             InitializeComponent();
             ApplicationThemeManager.ApplySystemTheme();
             ApplyLocalization();
-            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
 
             Loaded += (s, e) =>
             {
@@ -47,11 +46,6 @@ namespace LiveCaptionsTranslator
 
             ToggleTopmost(Translator.Setting.MainWindow.Topmost);
             ShowLogCard(Translator.Setting.MainWindow.CaptionLogEnabled);
-        }
-
-        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
-        {
-            Dispatcher.Invoke(ApplyLocalization);
         }
 
         private void ApplyLocalization()

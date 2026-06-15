@@ -18,18 +18,12 @@ namespace LiveCaptionsTranslator
             ApplicationThemeManager.ApplySystemTheme();
             var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString();
             Version.Text = version;
-            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
             ApplyLocalization();
 
             Loaded += (s, e) =>
             {
                 (App.Current.MainWindow as MainWindow)?.AutoHeightAdjust(minHeight: MIN_HEIGHT, maxHeight: MIN_HEIGHT);
             };
-        }
-
-        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
-        {
-            Dispatcher.Invoke(ApplyLocalization);
         }
 
         private void ApplyLocalization()

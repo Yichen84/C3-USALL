@@ -9,8 +9,6 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] English output.
 - [ ] Simplified Chinese output.
 - [ ] Arabic output.
-- [ ] Spanish output.
-- [ ] French output.
 - [ ] Action Checklist with checkboxes.
 - [ ] Unclear Items section.
 - [ ] Source Evidence section.
@@ -22,6 +20,7 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] English UI.
 - [ ] Simplified Chinese UI.
 - [ ] Arabic UI with RTL layout.
+- [ ] UI language restart-required message.
 - [ ] UI language and ClearBridge output language shown as independent controls.
 - [ ] Long-result demo uses the right-side scrollbar.
 - [ ] Known mouse wheel limitation is disclosed if showing long results.
@@ -42,9 +41,10 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - Mock Mode: service smoke passed; capture after desktop UI click-through.
 - Chinese output: service smoke passed; capture after desktop UI click-through.
 - English output: service smoke passed; capture after desktop UI click-through.
-- Arabic/Spanish/French output: Mock Provider branches implemented; capture after desktop UI click-through.
+- Arabic output: Mock Provider branch implemented; capture after desktop UI click-through.
 - Arabic UI / RTL: implemented in code; capture after desktop UI click-through and high-DPI visual check.
 - UI/output independence: implemented with separate Settings UI language and ClearBridge output language controls; capture one mixed-language scenario.
+- UI language changes: intentionally apply after restart; capture the restart-required message instead of demonstrating hot-switching.
 - History save: service smoke passed through compatibility History write; capture after desktop UI click-through.
 - Text test case library: read and converted into Phase 1 baseline report.
 - TC-01 Mock English/Chinese: service smoke passed; capture UI evidence when recording demo.

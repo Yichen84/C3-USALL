@@ -159,11 +159,11 @@ namespace LiveCaptionsTranslator.services.Localization
         private static string currentLanguage = EnglishCode;
         private static bool resourcesLoaded;
 
-        public static event EventHandler? LanguageChanged;
-
         public static IReadOnlyList<UiLanguageOption> SupportedLanguages => languageOptions;
 
         public static string CurrentLanguage => currentLanguage;
+
+        public static string SavedLanguage => NormalizeLanguageCode(Translator.Setting?.UiLanguage);
 
         public static bool IsRightToLeft => currentLanguage == ArabicCode;
 
@@ -174,20 +174,27 @@ namespace LiveCaptionsTranslator.services.Localization
         {
             EnsureResourcesLoaded();
             currentLanguage = NormalizeLanguageCode(language);
+            if (Translator.Setting != null && Translator.Setting.UiLanguage != currentLanguage)
+                Translator.Setting.UiLanguage = currentLanguage;
+        }
+
+        public static bool SaveLanguageForNextRestart(string? language)
+        {
+            EnsureResourcesLoaded();
+            var normalized = NormalizeLanguageCode(language);
+            if (Translator.Setting == null)
+                return false;
+
+            if (Translator.Setting.UiLanguage == normalized)
+                return false;
+
+            Translator.Setting.UiLanguage = normalized;
+            return true;
         }
 
         public static void SetLanguage(string? language)
         {
-            EnsureResourcesLoaded();
-            var normalized = NormalizeLanguageCode(language);
-            if (string.Equals(currentLanguage, normalized, StringComparison.OrdinalIgnoreCase))
-                return;
-
-            currentLanguage = normalized;
-            if (Translator.Setting != null && Translator.Setting.UiLanguage != normalized)
-                Translator.Setting.UiLanguage = normalized;
-
-            LanguageChanged?.Invoke(null, EventArgs.Empty);
+            SaveLanguageForNextRestart(language);
         }
 
         public static string NormalizeLanguageCode(string? language)
@@ -250,7 +257,7 @@ namespace LiveCaptionsTranslator.services.Localization
 
             ApplyKnownText(root);
             ApplyTechnicalLeftToRight(root);
-            foreach (var child in GetChildren(root))
+            foreach (var child in GetChildren(root).ToList())
                 ApplyTo(child);
         }
 
@@ -289,7 +296,7 @@ namespace LiveCaptionsTranslator.services.Localization
                 if (textBlock.Inlines.Count == 0)
                     ApplyTextValue(textBlock, OriginalTextProperty, textBlock.Text, value => textBlock.Text = value);
 
-                foreach (var run in textBlock.Inlines.OfType<Run>())
+                foreach (var run in textBlock.Inlines.OfType<Run>().ToList())
                     ApplyTextValue(run, OriginalTextProperty, run.Text, value => run.Text = value);
             }
 

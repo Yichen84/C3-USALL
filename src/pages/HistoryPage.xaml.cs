@@ -27,7 +27,6 @@ namespace LiveCaptionsTranslator
         {
             InitializeComponent();
             ApplicationThemeManager.ApplySystemTheme();
-            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
             ApplyLocalization();
 
             Loaded += async (s, e) =>
@@ -40,19 +39,9 @@ namespace LiveCaptionsTranslator
             {
                 HistoryDataGrid.ItemsSource = null;
                 Translator.TranslationLogged -= OnTranslationLogged;
-                AppLocalizationService.LanguageChanged -= AppLocalizationService_LanguageChanged;
             };
 
             HistoryMaxRow.SelectionChanged += maxRow_SelectionChanged;
-        }
-
-        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                ApplyLocalization();
-                HistoryDataGrid.Items.Refresh();
-            });
         }
 
         private void ApplyLocalization()

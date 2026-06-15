@@ -14,7 +14,7 @@ namespace LiveCaptionsTranslator
     public partial class SettingPage : Page
     {
         private static SettingWindow? SettingWindow;
-        private bool applyingLocalization;
+        private bool isInitializing = true;
 
         public SettingPage()
         {
@@ -23,8 +23,7 @@ namespace LiveCaptionsTranslator
             DataContext = Translator.Setting;
 
             UiLanguageBox.ItemsSource = AppLocalizationService.SupportedLanguages;
-            UiLanguageBox.SelectedValue = AppLocalizationService.CurrentLanguage;
-            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
+            UiLanguageBox.SelectedValue = AppLocalizationService.SavedLanguage;
 
             Loaded += (s, e) =>
             {
@@ -38,17 +37,13 @@ namespace LiveCaptionsTranslator
 
             LoadAPISetting();
             ApplyLocalization();
-        }
-
-        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
-        {
-            Dispatcher.Invoke(ApplyLocalization);
+            isInitializing = false;
         }
 
         private void ApplyLocalization()
         {
-            applyingLocalization = true;
-            UiLanguageBox.SelectedValue = AppLocalizationService.CurrentLanguage;
+            isInitializing = true;
+            UiLanguageBox.SelectedValue = AppLocalizationService.SavedLanguage;
             AppLocalizationService.ApplyTo(SettingsRoot);
             SetFlyoutText(LiveCaptionsInfoFlyout, "Settings.LiveCaptions.Info");
             SetFlyoutText(FrequencyInfoFlyout, "Settings.ApiInterval.Info");
@@ -57,7 +52,7 @@ namespace LiveCaptionsTranslator
             SetFlyoutText(CaptionLogMaxInfoFlyout, "Settings.Contexts.Info");
             SetFlyoutText(ContextAwareInfoFlyout, "Settings.ContextAware.Info");
             RefreshLiveCaptionsButtonText();
-            applyingLocalization = false;
+            isInitializing = false;
         }
 
         private static void SetFlyoutText(Flyout flyout, string key, double width = 300)
@@ -90,11 +85,19 @@ namespace LiveCaptionsTranslator
 
         private void UiLanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (applyingLocalization)
+            if (isInitializing)
                 return;
 
-            if (UiLanguageBox.SelectedValue is string language)
-                AppLocalizationService.SetLanguage(language);
+            if (UiLanguageBox.SelectedValue is string language &&
+                AppLocalizationService.SaveLanguageForNextRestart(language))
+            {
+                SnackbarHost.Show(
+                    AppLocalizationService.T("Settings.UiLanguage.RestartRequired.Title"),
+                    AppLocalizationService.T("Settings.UiLanguage.RestartRequired.Message"),
+                    SnackbarType.Info,
+                    timeout: 4,
+                    closeButton: true);
+            }
         }
 
         private void TranslateAPIBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

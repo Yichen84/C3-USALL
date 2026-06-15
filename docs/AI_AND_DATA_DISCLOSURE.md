@@ -34,7 +34,7 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 - Uses existing user-configured OpenAI-compatible settings.
 - API key is read from local settings and must not be committed.
 - Prompts ask for strict JSON and source-backed claims.
-- Phase 2 asks the configured model to return analysis fields in the selected output language: English, Simplified Chinese, Arabic, Spanish, or French.
+- Phase 2 asks the configured model to return analysis fields in the selected competition output language: English, Simplified Chinese, or Arabic.
 - `source_evidence.source_text` is instructed to preserve exact source wording instead of translating evidence snippets.
 
 ### Google Translate
@@ -48,7 +48,7 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 - Uses the built-in school weather notice sample.
 - Must be labeled as Mock Mode.
 - Must not be described as real AI output.
-- Phase 2 adds fixed Mock outputs in English, Simplified Chinese, Arabic, Spanish, and French for the same built-in sample.
+- Phase 2 keeps fixed Mock outputs for the competition-visible languages, English, Simplified Chinese, and Arabic, for the same built-in sample.
 
 ## Data Sources
 
@@ -69,4 +69,5 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 - History stores the pasted source text and generated analysis result locally in SQLite because the user explicitly requested History integration.
 - Mock data is clearly marked as Mock Mode.
 - UI language preference is stored locally in `setting.json` as `UiLanguage`.
+- UI language changes are saved locally and applied after restarting the application.
 - Localization JSON files contain only app UI strings and no user data.

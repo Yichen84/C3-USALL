@@ -33,13 +33,12 @@ namespace LiveCaptionsTranslator
             ApplicationThemeManager.ApplySystemTheme();
 
             UiLanguageBox.ItemsSource = ClearBridgeLocalizationService.SupportedUiLanguages;
-            UiLanguageBox.SelectedValue = AppLocalizationService.CurrentLanguage;
+            UiLanguageBox.SelectedValue = AppLocalizationService.SavedLanguage;
             ProviderBox.ItemsSource = new[] { "Mock", "OpenAI-compatible" };
             ProviderBox.SelectedItem = "Mock";
             OutputLanguageBox.ItemsSource = ClearBridgeOutputLanguages.Supported;
             OutputLanguageBox.SelectedItem = ClearBridgeOutputLanguages.English;
             RegisterMouseWheelForwardingHandlers();
-            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
 
             Loaded += (s, e) =>
             {
@@ -47,23 +46,10 @@ namespace LiveCaptionsTranslator
                     minHeight: MIN_HEIGHT,
                     maxHeight: MIN_HEIGHT);
             };
-            Unloaded += (s, e) =>
-                AppLocalizationService.LanguageChanged -= AppLocalizationService_LanguageChanged;
 
             ApplyLocalization();
             UpdateCharacterCount();
             SetState("Ready");
-        }
-
-        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                ApplyLocalization();
-                if (currentOutcome != null)
-                    RenderResult(currentOutcome);
-                RefreshStateText();
-            });
         }
 
         private void UiLanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -71,7 +57,8 @@ namespace LiveCaptionsTranslator
             if (applyingUiLanguage)
                 return;
 
-            localizer.SetLanguage(UiLanguageBox.SelectedValue as string);
+            if (AppLocalizationService.SaveLanguageForNextRestart(UiLanguageBox.SelectedValue as string))
+                SetState("Ready", localizer.T("Settings.UiLanguage.RestartRequired.Message"));
         }
 
         private void SourceTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -289,7 +276,7 @@ namespace LiveCaptionsTranslator
             ResultPanel.Visibility = Visibility.Visible;
 
             ResultTitleText.Text = result.Title;
-            PriorityText.Text = $"{localizer.T("ClearBridge.Priority")}: {result.Priority}";
+            PriorityText.Text = $"{localizer.T("ClearBridge.Priority")}: {LocalizePriority(result.Priority)}";
             SummaryHeaderText.Text = localizer.T("ClearBridge.SimpleSummary");
             SummaryText.Text = result.Summary;
 
@@ -333,7 +320,7 @@ namespace LiveCaptionsTranslator
             var result = currentOutcome.Result;
             return string.Join(Environment.NewLine,
                 result.Title,
-                $"{localizer.T("ClearBridge.Priority")}: {result.Priority}",
+                $"{localizer.T("ClearBridge.Priority")}: {LocalizePriority(result.Priority)}",
                 result.Summary);
         }
 
@@ -382,7 +369,7 @@ namespace LiveCaptionsTranslator
             PageContentGrid.FlowDirection = AppLocalizationService.CurrentFlowDirection;
             ProviderBox.FlowDirection = System.Windows.FlowDirection.LeftToRight;
             OutputLanguageBox.FlowDirection = System.Windows.FlowDirection.LeftToRight;
-            UiLanguageBox.SelectedValue = AppLocalizationService.CurrentLanguage;
+            UiLanguageBox.SelectedValue = AppLocalizationService.SavedLanguage;
             applyingUiLanguage = false;
 
             TitleText.Text = localizer.T("ClearBridge.Title");
@@ -512,6 +499,14 @@ namespace LiveCaptionsTranslator
         private string LocalizeError(string errorCode)
         {
             return localizer.T("ClearBridge.Error." + errorCode);
+        }
+
+        private string LocalizePriority(string priority)
+        {
+            var normalized = priority?.Trim().ToLowerInvariant() ?? "medium";
+            return normalized is "low" or "medium" or "high" or "urgent"
+                ? localizer.T("ClearBridge.Priority." + normalized)
+                : localizer.T("ClearBridge.Priority.medium");
         }
 
         private void UpdateCharacterCount()

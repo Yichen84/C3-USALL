@@ -1,4 +1,4 @@
-# Phase 2 Language Test Report - ClearBridge Output and App UI Localization
+# Phase 2 Language Test Report - Stabilization
 
 Date: 2026-06-15
 
@@ -6,107 +6,131 @@ Branch: `feature/clearbridge-phase2-language`
 
 ## Scope
 
-Phase 2 extends language support without adding OCR, PDF input, real-time caption summarization, DeepSeek, new provider families, or a scroll-container rewrite.
+Phase 2 stabilizes multilingual UI behavior and keeps the competition build focused on the languages required for the demo.
 
 Covered in this report:
 
-- ClearBridge output languages: English, Simplified Chinese, Arabic, Spanish, French.
 - App UI languages: English, Simplified Chinese, Arabic.
-- Arabic RTL UI handling.
-- UI language and ClearBridge output language independence.
-- Existing Phase 1 known mouse wheel issue remains disclosed.
+- ClearBridge output languages: English, Simplified Chinese, Arabic.
+- UI language changes now require an application restart.
+- ClearBridge output language remains independent from UI language.
+- Priority values are localized instead of showing internal values such as `high`.
+- Existing Phase 1 mouse wheel limitation remains disclosed.
 
-## Summary Table
+Spanish and French are removed from the user-visible competition build scope. Some lower-level constants or Mock branches may remain as future extension points, but they are not listed in the current picker or claimed as supported competition output languages.
 
-| Case | Provider | Language | Result | Main Issue |
-| --- | --- | --- | --- | --- |
-| P2-UI-EN | N/A | English UI | Pass by build/code validation | App-wide UI keys load from English JSON. |
-| P2-UI-ZH | N/A | Simplified Chinese UI | Pass by build/code validation | App-wide UI keys load from Simplified Chinese JSON. |
-| P2-UI-AR | N/A | Arabic UI | Pass by build/code validation; visual QA pending | Root UI flow direction switches RTL; API/URL/key-like controls stay LTR where named. |
-| P2-CB-EN | Mock | English output | Pass by build/code validation | Existing Mock output preserved. |
-| P2-CB-ZH | Mock | Simplified Chinese output | Pass by build/code validation | Existing Mock output preserved. |
-| P2-CB-AR | Mock | Arabic output | Pass by build/code validation | New fixed Arabic Mock result uses same data model. |
-| P2-CB-ES | Mock | Spanish output | Pass by build/code validation | New fixed Spanish Mock result uses same data model. |
-| P2-CB-FR | Mock | French output | Pass by build/code validation | New fixed French Mock result uses same data model. |
-| P2-INDEP | Mock | Arabic UI + English output | Pass by code validation; visual QA pending | UI language selection and output language selection are independent controls. |
-| P2-RTL-EVIDENCE | Mock | Arabic UI | Pass by code validation; visual QA pending | Source evidence source text is forced LTR so original English evidence remains readable. |
+## Crash Diagnosis
 
-## Detailed Checks
+Windows Application Event Log showed the crash as:
 
-### App UI Localization
+- Exception type: `System.InvalidOperationException`
+- Message: `集合被修改；枚举操作可能无法执行。`
+- Wrapped in one entry by: `System.Reflection.TargetInvocationException`
+- Stack trace summary:
+  - `System.Windows.Documents.RangeContentEnumerator.MoveNext()`
+  - `System.Linq.Enumerable.OfTypeIterator<TResult>(IEnumerable source)+MoveNext()`
+  - `LiveCaptionsTranslator.services.Localization.AppLocalizationService.ApplyKnownText(DependencyObject element)`
+  - repeated `AppLocalizationService.ApplyTo(DependencyObject root)`
+  - `LiveCaptionsTranslator.SettingPage.ApplyLocalization()`
+  - crash path 1: `SettingPage..ctor()` through WPF-UI navigation activation while entering Settings
+  - crash path 2: `SettingPage.UiLanguageBox_SelectionChanged` -> `AppLocalizationService.SetLanguage`
 
-Implemented:
+Trigger steps observed from the log and manual report:
 
-- Added shared localization service and JSON resources for English, Simplified Chinese, and Arabic.
-- Added persisted `UiLanguage` setting in `setting.json`.
-- Added UI language selector in Settings.
-- Main navigation, Settings, History, Caption copy messages, Info, Welcome, Overlay tooltips, API settings labels, and ClearBridge UI now use the shared localization service.
-- Runtime language switching raises a shared event so active pages refresh without restarting.
+- Current page: Settings.
+- User entered Settings or changed UI Language from Settings.
+- The old runtime language switch raised a shared language event while loaded pages were traversing and updating WPF controls.
+- During that traversal, `TextBlock.Inlines` / visual-tree collections were modified while being enumerated.
 
-Checks:
+Root cause:
 
-- JSON parse check passed for:
-  - `src/assets/localization/en.json`
-  - `src/assets/localization/zh-Hans.json`
-  - `src/assets/localization/ar.json`
-- Release build passed after the localization changes.
+- The Phase 2 hot language switch tried to refresh already-loaded pages and FlowDirection in place.
+- That refresh could run during page construction, Settings ComboBox initialization, navigation, or RTL/LTR layout changes.
+- The shared traversal touched text runs and visual children while WPF was still mutating the same collections.
 
-### Arabic RTL
+## Fix Summary
 
 Implemented:
 
-- Arabic UI sets `FlowDirection.RightToLeft` on main UI containers and localized pages.
-- Provider/API/model/key/URL-like controls remain left-to-right where controls are named as technical inputs.
-- ClearBridge source evidence original text is displayed left-to-right.
+- Removed runtime `LanguageChanged` refresh subscriptions from loaded pages and windows.
+- Changed UI language selection to save `UiLanguage` for the next restart.
+- The application now applies saved UI language and FlowDirection only during startup/page construction.
+- Added `_isInitializing` guard in Settings so ComboBox initialization does not trigger save/refresh side effects.
+- Normalizes invalid language codes to English.
+- Uses snapshot enumeration in localization traversal for safer startup localization.
+- Added localized restart-required messages in English, Simplified Chinese, and Arabic.
+- Localized ClearBridge priority display for `low`, `medium`, `high`, and `urgent`.
+- Trimmed the user-visible ClearBridge output language picker to English, Simplified Chinese, and Arabic.
 
-Pending:
+## Expected UI Language Behavior
 
-- Manual screenshot/video confirmation at normal DPI and high DPI.
-- Manual verification that no navigation label or button text is clipped in Arabic.
+When the user changes UI Language:
 
-### ClearBridge Output Languages
+1. The selected language is saved to local `setting.json`.
+2. The current visual tree is not hot-switched.
+3. Main window FlowDirection is not changed at runtime.
+4. A restart-required message is shown.
+5. After restarting, the saved UI language is applied.
 
-Implemented:
+Restart message strings:
 
-- `ClearBridgeOutputLanguages` now supports English, Simplified Chinese, Arabic, Spanish, and French.
-- Mock Provider returns fixed structured results for all five output languages.
-- OpenAI-compatible prompt now states that analysis fields should use the selected output language while `source_evidence.source_text` must preserve exact original wording.
+- English: `The interface language will be applied after restarting the application.`
+- Simplified Chinese: `界面语言将在重新启动应用后生效。`
+- Arabic: `سيتم تطبيق لغة الواجهة بعد إعادة تشغيل التطبيق.`
 
-Checks:
+## Manual Acceptance Matrix
 
-- Build validation confirms all new Mock branches compile against the same `CrisisActionAnalysisResult` model.
-- The output language control remains separate from UI language selection.
+| Case | UI Language | Output Language | Provider | Result | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P2-MX-01 | English | English | Mock | Pass by build/code validation; desktop click-through pending | UI labels English, Mock output English, priority displays localized as English. |
+| P2-MX-02 | English | Arabic | Mock | Pass by build/code validation; desktop click-through pending | UI labels English, Mock content Arabic, evidence source text remains original. |
+| P2-MX-03 | Simplified Chinese | Simplified Chinese | Mock | Pass by build/code validation; desktop click-through pending | UI labels Chinese, Mock output Chinese, priority displays localized as Chinese after restart. |
+| P2-MX-04 | Simplified Chinese | Arabic | Mock | Pass by build/code validation; desktop click-through pending | Mixed UI/output is expected: Chinese labels with Arabic generated content. |
+| P2-MX-05 | Arabic | Arabic | Mock | Pass by build/code validation; desktop visual QA pending | Arabic UI startup and RTL layout require final manual screenshot check. |
+| P2-MX-06 | Arabic | English | Mock | Pass by build/code validation; desktop visual QA pending | Arabic labels with English generated content is expected. |
 
-### Known Phase 1 Issue Still Present
+## Regression Checklist
 
-- ClearBridge result content remains fully viewable with the right-side scrollbar.
-- Mouse wheel scrolling over some generated result areas remains unreliable and is not claimed fixed in Phase 2.
-- Demo recording should continue to use the right-side scrollbar for long results.
+| Check | Result | Notes |
+| --- | --- | --- |
+| English startup | Pending manual package smoke | Fixed package exists; blocked from clean restart smoke by an existing inaccessible `LiveCaptionsTranslator` process. |
+| Chinese startup | Pending manual package smoke | Requires closing the existing process, setting saved UI language to `zh-Hans`, and restarting. |
+| Arabic startup | Pending manual package smoke | Requires closing the existing process, setting saved UI language to `ar`, and restarting. |
+| Settings page opens | Pass by build/code validation; manual repeat pending | Runtime hot-switch event removed; initialization guard added. |
+| Settings repeat navigation 10 times | Pending manual click-through | Must be checked in packaged EXE before demo. |
+| UI language change prompt | Pass by code validation | Saves setting and shows localized restart-required message. |
+| Restart applies saved language | Pending package smoke | Requires launching packaged EXE with saved `UiLanguage`. |
+| Caption page opens | Pending manual click-through | No business logic change. |
+| History page opens | Pending manual click-through | No business logic change. |
+| About page opens | Pending manual click-through | No business logic change. |
+| ClearBridge Mock analysis | Pass by build/code validation; manual click-through pending | Output picker now lists only English, Simplified Chinese, Arabic. |
+| OpenAI-compatible analysis | Not run locally | Requires user API configuration and network/service availability. |
+| Save to History | Pass by code path from Phase 1; manual click-through pending | No History logic change in this stabilization pass. |
 
 ## Validation Commands
 
-Completed during implementation:
+Completed during stabilization:
 
-- `dotnet restore .\LiveCaptionsTranslator.sln`: passed after running with access to user NuGet configuration.
-- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed.
-- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with existing warnings and 0 errors.
-- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with existing warnings and 0 errors.
-- JSON parse checks for English, Simplified Chinese, and Arabic localization resources: passed.
+- `dotnet restore .\LiveCaptionsTranslator.sln`: passed after allowing access to user NuGet configuration.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed after allowing access to user NuGet/MSBuild configuration.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore -v minimal`: passed with 0 warnings and 0 errors after code edits.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 warnings and 0 errors.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with 0 errors and existing nullable warnings.
+- Fixed test package directory content was synchronized with the latest publish output under `test-build\ClearBridge-Latest`.
 
-Final closeout still requires:
+Remaining manual closeout:
 
-- Fixed test package regeneration under `test-build\ClearBridge-Latest` after the Phase 2 commit hash is available.
+- Close the existing inaccessible `LiveCaptionsTranslator` process that is holding the fixed package directory.
+- Re-run English, Simplified Chinese, and Arabic startup/package smoke.
+- Re-run repeated Settings navigation click-through in the packaged EXE.
 
-## Aggregate Result
+## Known Issues
 
-- UI languages implemented: 3
-- ClearBridge output languages implemented: 5
-- JSON resource parse failures: 0
-- Build errors: 0
-- Fabrication issues found in Mock outputs: none from code review; Mock remains fixed demo output only.
-- JSON/parser issues found: none from resource parsing.
-- UI issues found: Arabic visual QA still pending; existing Phase 1 mouse wheel limitation remains.
+- ClearBridge result content remains fully viewable with the right-side scrollbar.
+- Mouse wheel scrolling over some generated result areas remains unreliable and is not claimed fixed in Phase 2.
+- Arabic UI visual screenshot evidence and repeated Settings navigation are still manual QA items.
+- OpenAI-compatible Arabic output quality depends on the configured model following the prompt.
 
 ## Recommendation
 
-Proceed to Phase 2 review after final format/build/publish/package verification and a short desktop click-through of English, Simplified Chinese, and Arabic UI. Do not merge to `main` until the PR is reviewed and the known mouse wheel limitation remains documented.
+Proceed to Phase 2 review after final restore, format, build, publish, fixed-package smoke, and a short desktop click-through. Do not merge to `main` until the PR is reviewed and the known mouse wheel limitation remains documented.

@@ -47,15 +47,10 @@ namespace LiveCaptionsTranslator
         {
             InitializeComponent();
             DataContext = Translator.Caption;
-            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
             ApplyLocalization();
 
             Loaded += (s, e) => Translator.Caption.PropertyChanged += TranslatedChanged;
-            Unloaded += (s, e) =>
-            {
-                Translator.Caption.PropertyChanged -= TranslatedChanged;
-                AppLocalizationService.LanguageChanged -= AppLocalizationService_LanguageChanged;
-            };
+            Unloaded += (s, e) => Translator.Caption.PropertyChanged -= TranslatedChanged;
 
             OriginalCaption.FontWeight = Translator.Setting.OverlayWindow.FontBold == Utils.FontBold.Both ?
                 FontWeights.Bold : FontWeights.Regular;
@@ -73,11 +68,6 @@ namespace LiveCaptionsTranslator
 
             ApplyFontSize();
             ApplyBackgroundOpacity();
-        }
-
-        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
-        {
-            Dispatcher.Invoke(ApplyLocalization);
         }
 
         private void ApplyLocalization()

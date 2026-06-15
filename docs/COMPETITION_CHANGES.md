@@ -160,7 +160,7 @@ This document separates upstream functionality from hackathon work. Do not claim
   - `src/windows/WelcomeWindow.xaml.cs`
   - `src/windows/OverlayWindow.xaml.cs`
 - User value:
-  - Lets users operate the app in English, Simplified Chinese, or Arabic, including runtime language switching and persisted preference.
+  - Lets users operate the app in English, Simplified Chinese, or Arabic with a persisted UI language preference that is applied after restart.
 - AI-assisted development:
   - Yes. Codex assisted with implementation, verification, and documentation.
 
@@ -184,7 +184,7 @@ This document separates upstream functionality from hackathon work. Do not claim
 - AI-assisted development:
   - Yes. Codex assisted with implementation and documentation.
 
-### ClearBridge Five-language Output
+### ClearBridge English / Chinese / Arabic Output
 
 - Start date: 2026-06-15
 - Completion date: 2026-06-15
@@ -196,6 +196,33 @@ This document separates upstream functionality from hackathon work. Do not claim
   - `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
   - `src/pages/ClearBridgePage.xaml.cs`
 - User value:
-  - Allows ClearBridge analysis output in English, Simplified Chinese, Arabic, Spanish, or French while keeping UI language independent.
+  - Allows competition-visible ClearBridge analysis output in English, Simplified Chinese, or Arabic while keeping UI language independent.
 - AI-assisted development:
   - Yes. Codex assisted with implementation and documentation.
+
+### Phase 2 UI Language Stability Fix
+
+- Start date: 2026-06-15
+- Completion date: 2026-06-15
+- Corresponding commits:
+  - This stabilization commit - `fix(localization): stabilize language changes and settings navigation`
+- Corresponding files:
+  - `src/services/Localization/AppLocalizationService.cs`
+  - `src/pages/SettingPage.xaml.cs`
+  - `src/pages/ClearBridgePage.xaml.cs`
+  - `src/pages/CaptionPage.xaml.cs`
+  - `src/pages/HistoryPage.xaml.cs`
+  - `src/pages/InfoPage.xaml.cs`
+  - `src/windows/MainWindow.xaml.cs`
+  - `src/windows/OverlayWindow.xaml.cs`
+  - `src/windows/SettingWindow.xaml.cs`
+  - `src/windows/WelcomeWindow.xaml.cs`
+  - `src/services/ClearBridge/ClearBridgeOutputLanguages.cs`
+  - `src/assets/localization/en.json`
+  - `src/assets/localization/zh-Hans.json`
+  - `src/assets/localization/ar.json`
+  - `docs/PHASE2_LANGUAGE_TEST_REPORT.md`
+- User value:
+  - Prevents Settings/UI-language crashes by applying UI language changes after restart, localizes priority values, and keeps the competition output picker focused on English, Simplified Chinese, and Arabic.
+- AI-assisted development:
+  - Yes. Codex assisted with crash diagnosis, implementation, build validation, and documentation.

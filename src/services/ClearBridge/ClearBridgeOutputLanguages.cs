@@ -12,9 +12,7 @@ namespace LiveCaptionsTranslator.services.ClearBridge
         [
             English,
             SimplifiedChinese,
-            Arabic,
-            Spanish,
-            French
+            Arabic
         ];
     }
 }

@@ -21,7 +21,6 @@ namespace LiveCaptionsTranslator
             InitializeComponent();
             DataContext = Translator.Caption;
             instance = this;
-            AppLocalizationService.LanguageChanged += AppLocalizationService_LanguageChanged;
             ApplyLocalization();
 
             Loaded += (s, e) =>
@@ -37,11 +36,6 @@ namespace LiveCaptionsTranslator
             };
 
             CollapseTranslatedCaption(Translator.Setting.MainWindow.CaptionLogEnabled);
-        }
-
-        private void AppLocalizationService_LanguageChanged(object? sender, EventArgs e)
-        {
-            Dispatcher.Invoke(ApplyLocalization);
         }
 
         private void ApplyLocalization()

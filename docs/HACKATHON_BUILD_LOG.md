@@ -222,20 +222,21 @@ Close Phase 1 for review by documenting the accepted mouse wheel limitation, pre
 ## 2026-06-15 - Phase 2 / Multilingual Output and App UI Localization
 
 ### Goal
-Extend ClearBridge beyond the Phase 1 English/Simplified Chinese demo by adding five ClearBridge output languages and app-wide English, Simplified Chinese, and Arabic UI localization with RTL support.
+Extend ClearBridge beyond the Phase 1 English/Simplified Chinese demo by adding app-wide English, Simplified Chinese, and Arabic UI localization, Arabic RTL support, and competition-visible ClearBridge output in English, Simplified Chinese, and Arabic.
 
 ### Work Completed
 - Added a shared app localization service backed by JSON resource files.
 - Added English, Simplified Chinese, and Arabic UI resource files.
-- Added persisted `UiLanguage` setting and a runtime UI language selector in Settings.
+- Added persisted `UiLanguage` setting and a UI language selector in Settings.
 - Localized main navigation, Settings, History, Caption copy messages, Info, Welcome, Overlay tooltips, API settings labels, and ClearBridge UI.
 - Added Arabic RTL handling for app containers and localized pages.
 - Kept API URLs, API keys, model names, provider-like controls, and source evidence source text left-to-right where appropriate.
-- Extended ClearBridge output languages to English, Simplified Chinese, Arabic, Spanish, and French.
-- Added fixed Mock Provider results for Arabic, Spanish, and French using the same structured model.
+- Set the competition-visible ClearBridge output languages to English, Simplified Chinese, and Arabic.
+- Added fixed Arabic Mock Provider output using the same structured model.
 - Updated the OpenAI-compatible ClearBridge prompt so generated fields use the selected output language while `source_evidence.source_text` preserves exact source wording.
 - Added `docs/PHASE2_LANGUAGE_TEST_REPORT.md`.
-- Deferred OCR, PDF, image input, real-time caption summarization, DeepSeek, additional providers, and scroll container redesign.
+- Removed Spanish and French from the competition-visible output picker; any remaining lower-level references are treated as future extension points, not current supported demo languages.
+- Deferred OCR, PDF, image input, real-time caption summarization, DeepSeek, additional providers, runtime UI hot-switching, and scroll container redesign.
 
 ### Files Changed
 - `LiveCaptionsTranslator.csproj`
@@ -289,7 +290,7 @@ Extend ClearBridge beyond the Phase 1 English/Simplified Chinese demo by adding 
 ### External Services / Libraries
 - Upstream open-source project: LiveCaptions Translator by SakiRinn and contributors.
 - Runtime AI option: OpenAI-compatible API when configured by the user.
-- Mock Provider: fixed local demo data in five output languages; not real AI.
+- Mock Provider: fixed local demo data for the competition-visible output languages; not real AI.
 - Existing WPF-UI and Microsoft.Data.Sqlite dependencies remain in use.
 
 ### Tests Performed
@@ -310,3 +311,79 @@ Extend ClearBridge beyond the Phase 1 English/Simplified Chinese demo by adding 
 - Branch: `feature/clearbridge-phase2-language`
 - Commit hash: this Phase 2 commit
 - Commit message: `feat(localization): add multilingual UI and ClearBridge outputs`
+
+## 2026-06-15 - Phase 2 / Stabilize UI Language Changes and Settings
+
+### Goal
+Fix the crash found during manual Phase 2 testing when entering Settings or changing UI language, and align the competition build language scope with English, Simplified Chinese, and Arabic.
+
+### Work Completed
+- Diagnosed the crash from Windows Application Event Log entries for `LiveCaptionsTranslator`.
+- Replaced runtime UI hot-switching with a safer restart-required behavior.
+- Removed loaded page/window `LanguageChanged` refresh subscriptions that could mutate the visual tree during navigation or layout.
+- Added Settings initialization guards so ComboBox setup does not trigger save/refresh side effects.
+- Kept startup localization and startup FlowDirection handling.
+- Added localized restart-required messages in English, Simplified Chinese, and Arabic.
+- Localized ClearBridge priority values for `low`, `medium`, `high`, and `urgent`.
+- Trimmed the user-visible ClearBridge output language picker to English, Simplified Chinese, and Arabic.
+- Updated Phase 2 documentation and demo evidence notes to remove current Spanish/French support claims.
+
+### Files Changed
+- `src/services/Localization/AppLocalizationService.cs`
+- `src/pages/SettingPage.xaml.cs`
+- `src/pages/ClearBridgePage.xaml.cs`
+- `src/pages/CaptionPage.xaml.cs`
+- `src/pages/HistoryPage.xaml.cs`
+- `src/pages/InfoPage.xaml.cs`
+- `src/windows/MainWindow.xaml.cs`
+- `src/windows/OverlayWindow.xaml.cs`
+- `src/windows/SettingWindow.xaml.cs`
+- `src/windows/WelcomeWindow.xaml.cs`
+- `src/services/ClearBridge/ClearBridgeOutputLanguages.cs`
+- `src/assets/localization/en.json`
+- `src/assets/localization/zh-Hans.json`
+- `src/assets/localization/ar.json`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/COMPETITION_CHANGES.md`
+- `docs/PHASE2_LANGUAGE_TEST_REPORT.md`
+- `docs/SUBMISSION_DRAFT.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+- `docs/AI_AND_DATA_DISCLOSURE.md`
+
+### Technical Decisions
+- Chose restart-required UI language changes because hot-switching FlowDirection and text resources on an already-loaded WPF navigation tree caused collection mutation during enumeration.
+- Kept UI Language and Output Language independent: UI labels follow saved UI language after restart; ClearBridge AI content follows the selected output language.
+- Kept `source_evidence.source_text` in original source wording so claims remain auditable.
+- Kept Spanish/French lower-level code as future extension surface where harmless, but removed them from user-visible competition scope.
+
+### AI Tools Used
+- Codex: crash diagnosis, implementation, build validation, packaging workflow, and documentation updates.
+- ChatGPT: no new separate usage recorded in this stabilization pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- Windows Application Event Log: used to inspect the crash type, message, and stack trace.
+- Upstream open-source project: LiveCaptions Translator by SakiRinn and contributors.
+- Runtime AI option remains OpenAI-compatible API when configured by the user.
+- Mock Provider remains fixed local demo data and is not real AI.
+
+### Tests Performed
+- Windows Event Log inspection: identified `System.InvalidOperationException` from localization traversal during Settings navigation/language change.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore -v minimal`: passed with 0 warnings and 0 errors after the code changes.
+- `dotnet restore .\LiveCaptionsTranslator.sln`: passed after allowing access to user NuGet configuration.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed after allowing access to user NuGet/MSBuild configuration.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 warnings and 0 errors.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with 0 errors and existing nullable warnings.
+- Fixed package contents were synchronized under `test-build\ClearBridge-Latest`; an existing inaccessible `LiveCaptionsTranslator` process prevented a clean delete/restart smoke in this session.
+
+### Known Limitations
+- Runtime UI language changes intentionally require restart.
+- English, Simplified Chinese, and Arabic startup smoke remain manual demo checks after closing the existing inaccessible test process.
+- Arabic visual QA and repeated Settings navigation remain manual demo checks.
+- Existing Phase 1 mouse wheel behavior over some ClearBridge result areas remains unreliable and is not fixed by Phase 2.
+- OpenAI-compatible multilingual output depends on the configured model following the prompt.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase2-language`
+- Commit hash: this stabilization commit
+- Commit message: `fix(localization): stabilize language changes and settings navigation`
