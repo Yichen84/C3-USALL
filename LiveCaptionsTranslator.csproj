@@ -28,6 +28,10 @@
 			<SubType>Designer</SubType>
 		</ApplicationDefinition>
 		<Content Include="src\LiveCaptions-Translator.ico" />
+		<Content Include="src\assets\localization\*.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
 		
 		<PackageReference Include="Interop.UIAutomationClient" Version="10.19041.0" />
 		

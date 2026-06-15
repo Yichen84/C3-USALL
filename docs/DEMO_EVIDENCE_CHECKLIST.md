@@ -6,8 +6,9 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 
 - [ ] ClearBridge input page.
 - [ ] Mock Mode label visible.
-- [ ] English output.
-- [ ] Simplified Chinese output.
+- [x] English output.
+- [x] Simplified Chinese output.
+- [x] Arabic output.
 - [ ] Action Checklist with checkboxes.
 - [ ] Unclear Items section.
 - [ ] Source Evidence section.
@@ -16,8 +17,11 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] Error handling for short input.
 - [ ] API key missing error for OpenAI-compatible provider.
 - [ ] Cancel action.
-- [ ] English UI.
-- [ ] Simplified Chinese UI.
+- [x] English UI.
+- [x] Simplified Chinese UI.
+- [x] Arabic UI with RTL layout.
+- [x] UI language restart-required message.
+- [ ] UI language and ClearBridge output language shown as independent controls.
 - [ ] Long-result demo uses the right-side scrollbar.
 - [ ] Known mouse wheel limitation is disclosed if showing long results.
 
@@ -28,20 +32,25 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] Open-source attribution visible.
 - [ ] AI and data disclosure visible.
 - [x] Phase 1 text test baseline documented in `docs/PHASE1_TEST_REPORT.md`.
+- [x] Phase 2 language test report documented in `docs/PHASE2_LANGUAGE_TEST_REPORT.md`.
 - [ ] No `bin`, `obj`, `.vs`, API key, `setting.json`, `translation_history.db`, logs, or personal files committed.
 
 ## Current Capture Readiness
 
-- ClearBridge page: implemented; capture after desktop UI click-through.
-- Mock Mode: service smoke passed; capture after desktop UI click-through.
-- Chinese output: service smoke passed; capture after desktop UI click-through.
-- English output: service smoke passed; capture after desktop UI click-through.
-- History save: service smoke passed through compatibility History write; capture after desktop UI click-through.
+- ClearBridge page: implemented and passed manual regression; capture for final submission media.
+- Mock Mode: service smoke passed and manual regression completed; capture for final submission media.
+- Chinese output: manual regression passed; capture for final submission media.
+- English output: manual regression passed; capture for final submission media.
+- Arabic output: manual regression passed; capture for final submission media.
+- Arabic UI / RTL: manual regression passed; capture screenshot/video evidence for final submission media.
+- UI/output independence: implemented with separate Settings UI language and ClearBridge output language controls; capture one mixed-language scenario.
+- UI language changes: intentionally apply after restart; manual regression passed, capture the restart-required message instead of demonstrating hot-switching.
+- History save: service smoke passed through compatibility History write; History page switching passed manual regression.
 - Text test case library: read and converted into Phase 1 baseline report.
 - TC-01 Mock English/Chinese: service smoke passed; capture UI evidence when recording demo.
 - TC-02 through TC-10: pending OpenAI-compatible provider/manual QA; do not claim as passed from Mock.
 - No committed sensitive files: source scan completed with no key-pattern matches.
-- GitHub Actions: pending after branch push.
+- GitHub Actions: verify after final PR merge to main.
 - ClearBridge result content: viewable with wrapping and responsive layout; capture using the right-side scrollbar for long outputs.
 - Mouse wheel over some result areas: accepted Phase 1 known issue; do not record or describe it as fully fixed.
 - Fixed local test package path: `D:\USALL\USALL-Git\test-build\ClearBridge-Latest\LiveCaptionsTranslator.exe`.

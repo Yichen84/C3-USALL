@@ -55,6 +55,8 @@
                     <ComboBox
                         x:Name="UiLanguageBox"
                         MinHeight="30"
+                        DisplayMemberPath="DisplayName"
+                        SelectedValuePath="Code"
                         SelectionChanged="UiLanguageBox_SelectionChanged" />
                 </StackPanel>
                 <StackPanel Margin="0,0,10,0">
@@ -308,6 +310,7 @@
                                                 Text="{Binding Claim}"
                                                 TextWrapping="Wrap" />
                                             <TextBlock
+                                                FlowDirection="LeftToRight"
                                                 Opacity="0.75"
                                                 Text="{Binding SourceText}"
                                                 TextWrapping="Wrap" />

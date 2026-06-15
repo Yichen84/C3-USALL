@@ -6,6 +6,7 @@ using Wpf.Ui.Appearance;
 
 using LiveCaptionsTranslator.models.ClearBridge;
 using LiveCaptionsTranslator.services.ClearBridge;
+using LiveCaptionsTranslator.services.Localization;
 using LiveCaptionsTranslator.utils;
 
 namespace LiveCaptionsTranslator
@@ -22,6 +23,9 @@ namespace LiveCaptionsTranslator
         private bool historySaved;
         private bool resultCardsUseSingleColumn;
         private MouseWheelEventArgs? forwardedMouseWheelEvent;
+        private bool applyingUiLanguage;
+        private string currentStateKey = "Ready";
+        private string currentStateDetail = string.Empty;
 
         public ClearBridgePage()
         {
@@ -29,7 +33,7 @@ namespace LiveCaptionsTranslator
             ApplicationThemeManager.ApplySystemTheme();
 
             UiLanguageBox.ItemsSource = ClearBridgeLocalizationService.SupportedUiLanguages;
-            UiLanguageBox.SelectedItem = ClearBridgeLocalizationService.English;
+            UiLanguageBox.SelectedValue = AppLocalizationService.SavedLanguage;
             ProviderBox.ItemsSource = new[] { "Mock", "OpenAI-compatible" };
             ProviderBox.SelectedItem = "Mock";
             OutputLanguageBox.ItemsSource = ClearBridgeOutputLanguages.Supported;
@@ -50,10 +54,11 @@ namespace LiveCaptionsTranslator
 
         private void UiLanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            localizer.SetLanguage(UiLanguageBox.SelectedItem as string);
-            ApplyLocalization();
-            if (currentOutcome != null)
-                RenderResult(currentOutcome);
+            if (applyingUiLanguage)
+                return;
+
+            if (AppLocalizationService.SaveLanguageForNextRestart(UiLanguageBox.SelectedValue as string))
+                SetState("Ready", localizer.T("Settings.UiLanguage.RestartRequired.Message"));
         }
 
         private void SourceTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -271,7 +276,7 @@ namespace LiveCaptionsTranslator
             ResultPanel.Visibility = Visibility.Visible;
 
             ResultTitleText.Text = result.Title;
-            PriorityText.Text = $"{localizer.T("ClearBridge.Priority")}: {result.Priority}";
+            PriorityText.Text = $"{localizer.T("ClearBridge.Priority")}: {LocalizePriority(result.Priority)}";
             SummaryHeaderText.Text = localizer.T("ClearBridge.SimpleSummary");
             SummaryText.Text = result.Summary;
 
@@ -315,7 +320,7 @@ namespace LiveCaptionsTranslator
             var result = currentOutcome.Result;
             return string.Join(Environment.NewLine,
                 result.Title,
-                $"{localizer.T("ClearBridge.Priority")}: {result.Priority}",
+                $"{localizer.T("ClearBridge.Priority")}: {LocalizePriority(result.Priority)}",
                 result.Summary);
         }
 
@@ -359,6 +364,14 @@ namespace LiveCaptionsTranslator
 
         private void ApplyLocalization()
         {
+            applyingUiLanguage = true;
+            FlowDirection = AppLocalizationService.CurrentFlowDirection;
+            PageContentGrid.FlowDirection = AppLocalizationService.CurrentFlowDirection;
+            ProviderBox.FlowDirection = System.Windows.FlowDirection.LeftToRight;
+            OutputLanguageBox.FlowDirection = System.Windows.FlowDirection.LeftToRight;
+            UiLanguageBox.SelectedValue = AppLocalizationService.SavedLanguage;
+            applyingUiLanguage = false;
+
             TitleText.Text = localizer.T("ClearBridge.Title");
             SubtitleText.Text = localizer.T("ClearBridge.Subtitle");
             UiLanguageLabel.Text = localizer.T("ClearBridge.UiLanguage");
@@ -461,6 +474,22 @@ namespace LiveCaptionsTranslator
 
         private void SetState(string stateKey, string detail = "")
         {
+            currentStateKey = stateKey;
+            currentStateDetail = detail;
+            RefreshStateText();
+        }
+
+        private void RefreshStateText()
+        {
+            var stateKey = currentStateKey;
+            var detail = currentStateDetail;
+            if (stateKey == "MockMode" && currentOutcome != null)
+            {
+                detail = currentOutcome.UsedFallback
+                    ? localizer.T("ClearBridge.Fallback.Detail")
+                    : localizer.T("ClearBridge.MockMode.Detail");
+            }
+
             var label = localizer.T("ClearBridge." + stateKey);
             StatusText.Text = string.IsNullOrWhiteSpace(detail)
                 ? label
@@ -470,6 +499,14 @@ namespace LiveCaptionsTranslator
         private string LocalizeError(string errorCode)
         {
             return localizer.T("ClearBridge.Error." + errorCode);
+        }
+
+        private string LocalizePriority(string priority)
+        {
+            var normalized = priority?.Trim().ToLowerInvariant() ?? "medium";
+            return normalized is "low" or "medium" or "high" or "urgent"
+                ? localizer.T("ClearBridge.Priority." + normalized)
+                : localizer.T("ClearBridge.Priority.medium");
         }
 
         private void UpdateCharacterCount()

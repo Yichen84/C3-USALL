@@ -23,6 +23,7 @@ namespace LiveCaptionsTranslator.models
 
         private string apiName;
         private string targetLanguage;
+        private string uiLanguage = "en";
         private string prompt;
         private string? ignoredUpdateVersion;
 
@@ -87,6 +88,15 @@ namespace LiveCaptionsTranslator.models
             {
                 targetLanguage = value;
                 OnPropertyChanged("TargetLanguage");
+            }
+        }
+        public string UiLanguage
+        {
+            get => uiLanguage;
+            set
+            {
+                uiLanguage = string.IsNullOrWhiteSpace(value) ? "en" : value;
+                OnPropertyChanged("UiLanguage");
             }
         }
         public string Prompt

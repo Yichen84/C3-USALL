@@ -10,7 +10,7 @@
     JournalEntry.KeepAlive="True"
     mc:Ignorable="d">
 
-    <Grid Margin="5,5,15,5">
+    <Grid x:Name="CaptionRoot" Margin="5,5,15,5">
         <Grid.RowDefinitions>
             <RowDefinition x:Name="OriginalCaption_Row" Height="Auto" />
             <RowDefinition x:Name="TranslatedCaption_Row" Height="Auto" />

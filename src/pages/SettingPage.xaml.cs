@@ -5,6 +5,7 @@ using System.Windows.Input;
 using Wpf.Ui.Appearance;
 
 using LiveCaptionsTranslator.models;
+using LiveCaptionsTranslator.services.Localization;
 using LiveCaptionsTranslator.utils;
 using Wpf.Ui.Controls;
 
@@ -13,6 +14,7 @@ namespace LiveCaptionsTranslator
     public partial class SettingPage : Page
     {
         private static SettingWindow? SettingWindow;
+        private bool isInitializing = true;
 
         public SettingPage()
         {
@@ -20,16 +22,47 @@ namespace LiveCaptionsTranslator
             ApplicationThemeManager.ApplySystemTheme();
             DataContext = Translator.Setting;
 
+            UiLanguageBox.ItemsSource = AppLocalizationService.SupportedLanguages;
+            UiLanguageBox.SelectedValue = AppLocalizationService.SavedLanguage;
+
             Loaded += (s, e) =>
             {
                 (App.Current.MainWindow as MainWindow)?.AutoHeightAdjust(maxHeight: (int)App.Current.MainWindow.MinHeight);
                 CheckForFirstUse();
+                ApplyLocalization();
             };
 
             TranslateAPIBox.ItemsSource = Translator.Setting?.Configs.Keys;
             TranslateAPIBox.SelectedIndex = 0;
 
             LoadAPISetting();
+            ApplyLocalization();
+            isInitializing = false;
+        }
+
+        private void ApplyLocalization()
+        {
+            isInitializing = true;
+            UiLanguageBox.SelectedValue = AppLocalizationService.SavedLanguage;
+            AppLocalizationService.ApplyTo(SettingsRoot);
+            SetFlyoutText(LiveCaptionsInfoFlyout, "Settings.LiveCaptions.Info");
+            SetFlyoutText(FrequencyInfoFlyout, "Settings.ApiInterval.Info");
+            SetFlyoutText(TranslateAPIInfoFlyout, "Settings.TranslateApi.Info");
+            SetFlyoutText(TargetLangInfoFlyout, "Settings.TargetLanguage.Info", 350);
+            SetFlyoutText(CaptionLogMaxInfoFlyout, "Settings.Contexts.Info");
+            SetFlyoutText(ContextAwareInfoFlyout, "Settings.ContextAware.Info");
+            RefreshLiveCaptionsButtonText();
+            isInitializing = false;
+        }
+
+        private static void SetFlyoutText(Flyout flyout, string key, double width = 300)
+        {
+            flyout.Content = new System.Windows.Controls.TextBlock
+            {
+                Width = width,
+                Text = AppLocalizationService.T(key),
+                TextWrapping = TextWrapping.Wrap
+            };
         }
 
         private void LiveCaptionsButton_click(object sender, RoutedEventArgs e)
@@ -37,19 +70,33 @@ namespace LiveCaptionsTranslator
             if (Translator.Window == null)
                 return;
 
-            var button = sender as Wpf.Ui.Controls.Button;
-            var text = ButtonText.Text;
-
             bool isHide = Translator.Window.Current.BoundingRectangle == Rect.Empty;
             if (isHide)
             {
                 LiveCaptionsHandler.RestoreLiveCaptions(Translator.Window);
-                ButtonText.Text = "Hide";
             }
             else
             {
                 LiveCaptionsHandler.HideLiveCaptions(Translator.Window);
-                ButtonText.Text = "Show";
+            }
+
+            RefreshLiveCaptionsButtonText();
+        }
+
+        private void UiLanguageBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (isInitializing)
+                return;
+
+            if (UiLanguageBox.SelectedValue is string language &&
+                AppLocalizationService.SaveLanguageForNextRestart(language))
+            {
+                SnackbarHost.Show(
+                    AppLocalizationService.T("Settings.UiLanguage.RestartRequired.Title"),
+                    AppLocalizationService.T("Settings.UiLanguage.RestartRequired.Message"),
+                    SnackbarType.Info,
+                    timeout: 4,
+                    closeButton: true);
             }
         }
 
@@ -158,7 +205,16 @@ namespace LiveCaptionsTranslator
         private void CheckForFirstUse()
         {
             if (Translator.FirstUseFlag)
-                ButtonText.Text = "Hide";
+                ButtonText.Text = AppLocalizationService.T("Settings.Hide");
+        }
+
+        private void RefreshLiveCaptionsButtonText()
+        {
+            if (Translator.Window == null)
+                return;
+
+            var isHidden = Translator.Window.Current.BoundingRectangle == Rect.Empty;
+            ButtonText.Text = AppLocalizationService.T(isHidden ? "Settings.Show" : "Settings.Hide");
         }
 
         public void LoadAPISetting()

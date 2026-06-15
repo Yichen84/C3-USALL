@@ -417,3 +417,17 @@ Git evidence for the closeout documentation:
 ## Recommendation
 
 Do not claim full Phase 1 case-library pass yet. TC-01 is validated through Mock in English and Simplified Chinese, and the remaining text cases are now established as the real-provider/manual acceptance baseline. For the Phase 1 demo, use the right-side scrollbar for long ClearBridge results and record mouse wheel behavior as a known issue rather than a completed fix.
+
+## 2026-06-15 Phase 1 PR Closeout
+
+Manual regression during Phase 2 closeout confirmed the Phase 1 text workflow remains usable after multilingual UI work:
+
+- ClearBridge page can be reached.
+- Mock analysis remains available.
+- English, Simplified Chinese, and Arabic output paths passed Phase 2 manual regression.
+- Checklist, History navigation, and page switching did not show new crashes.
+- The right-side scrollbar remains the accepted way to browse long ClearBridge results during demo recording.
+
+Known issue retained:
+
+- Mouse wheel scrolling over some generated result areas remains unreliable and is not claimed fixed.

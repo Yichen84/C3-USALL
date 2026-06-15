@@ -11,7 +11,10 @@
     VerticalAlignment="Top"
     JournalEntry.KeepAlive="False"
     mc:Ignorable="d">
-    <Grid Margin="15" VerticalAlignment="Top">
+    <Grid
+        x:Name="HistoryRoot"
+        Margin="15"
+        VerticalAlignment="Top">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -186,7 +189,7 @@
                 <DataGridTemplateColumn Width="0.35*" Header="Feature">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding FeatureType}" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding FeatureTypeDisplay}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

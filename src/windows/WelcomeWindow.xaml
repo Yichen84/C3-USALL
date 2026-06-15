@@ -29,7 +29,10 @@
             ShowMaximize="False"
             ShowMinimize="False">
             <ui:TitleBar.Header>
-                <ui:TextBlock Padding="15,0,0,0" VerticalAlignment="Center">
+                <ui:TextBlock
+                    x:Name="WelcomeTitleBarText"
+                    Padding="15,0,0,0"
+                    VerticalAlignment="Center">
                     Getting Started
                 </ui:TextBlock>
             </ui:TitleBar.Header>
@@ -37,6 +40,7 @@
 
         <StackPanel Grid.Row="1" Background="{ui:ThemeResource SystemFillColorNeutralBackgroundBrush}">
             <TextBlock
+                x:Name="WelcomeHeadingText"
                 Margin="20"
                 HorizontalAlignment="Left"
                 FontSize="24"
@@ -44,32 +48,13 @@
                 Text="Welcome to LiveCaptions Translator!"
                 TextAlignment="Left" />
             <ui:TextBlock
+                x:Name="WelcomeBodyText"
                 Margin="20,10,20,10"
                 TextAlignment="Left"
-                TextWrapping="Wrap">
-                <Run Text="LiveCaptions Translator is based on Windows LiveCaptions." />
-                <Run Text="Before your first running, you need to configure it according to the following steps:&#x0A;" />
-                <Run Text="&#x0A;1. Open Windows LiveCaptions and follow the guide to download the necessary files for on-device speech recognition and language packs." />
-                <Run Text="&#x0A;2. Click the" />
-                <Run FontWeight="Bold" Text="⚙️ gear" />
-                <Run Text="icon in Windows LiveCaptions to open the settings menu, and select" />
-                <Run FontWeight="Bold" Text="&quot;Position &gt; Overlaid on screen&quot;" />
-                <Run Text=".&#x0A;3. Click the" />
-                <Run FontWeight="Bold" Text="&quot;Hide&quot;" />
-                <Run Text="button located in the setting page of LiveCaptions Translator to hide Windows LiveCaptions.&#x0A;" />
-                <Run Text="&#x0A;The program has automatically navigated to the setting page and opened Windows LiveCaptions." />
-                <Run Text="After completing the configuration, you can switch back to the main page and enjoy real-time audio translation.&#x0A;" />
-                <Run Text="&#x0A;For more details, visit our wiki: " />
-                <Hyperlink NavigateUri="https://github.com/SakiRinn/LiveCaptions-Translator/wiki" RequestNavigate="Hyperlink_RequestNavigate">
-                    https://github.com/SakiRinn/LiveCaptions-Translator/wiki
-                </Hyperlink>
-                <Run FontWeight="Bold" Text="&#x0A;&#x0A;Tip:" />
-                <Run Text="To change the" />
-                <Run FontWeight="DemiBold" TextDecorations="Underline" Text="Source Language" />
-                <Run Text=", please [Show] LiveCaptions on the setting page and do it in Windows LiveCaptions." />
-            </ui:TextBlock>
+                TextWrapping="Wrap" />
 
             <ui:Button
+                x:Name="WelcomeCloseButton"
                 Margin="0,10,0,0"
                 Padding="30,10,30,10"
                 HorizontalAlignment="Center"

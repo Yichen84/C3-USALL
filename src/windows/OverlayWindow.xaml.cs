@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using Wpf.Ui.Controls;
 
 using LiveCaptionsTranslator.apis;
+using LiveCaptionsTranslator.services.Localization;
 using LiveCaptionsTranslator.Utils;
 using Button = Wpf.Ui.Controls.Button;
 using Color = System.Windows.Media.Color;
@@ -46,6 +47,7 @@ namespace LiveCaptionsTranslator
         {
             InitializeComponent();
             DataContext = Translator.Caption;
+            ApplyLocalization();
 
             Loaded += (s, e) => Translator.Caption.PropertyChanged += TranslatedChanged;
             Unloaded += (s, e) => Translator.Caption.PropertyChanged -= TranslatedChanged;
@@ -66,6 +68,12 @@ namespace LiveCaptionsTranslator
 
             ApplyFontSize();
             ApplyBackgroundOpacity();
+        }
+
+        private void ApplyLocalization()
+        {
+            Title = AppLocalizationService.T("Main.Tooltip.OverlayWindow");
+            AppLocalizationService.ApplyTo(ControlPanel);
         }
 
         private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
