@@ -270,3 +270,32 @@ This document separates upstream functionality from hackathon work. Do not claim
   - OCR Translation and OCR Summary are separate exits from the OCR review flow, not ClearBridge analysis.
   - ClearBridge OCR is the competition-added structured action analysis path.
   - The current repository baseline did not include a reusable OCR workflow implementation, so Phase 3 adds the one-time OCR review flow while reusing the existing translation provider for ordinary translation.
+
+### Phase 3 OCR Interaction Fixes and Global Hotkey
+
+- Start date: 2026-06-15
+- Completion date: 2026-06-15
+- Corresponding commits:
+  - This interaction fix commit - `fix(ocr): expose image upload and simplify review workflow`
+- Corresponding files:
+  - `src/models/Setting.cs`
+  - `src/services/Ocr/ScreenOcrHotkeyService.cs`
+  - `src/windows/MainWindow.xaml.cs`
+  - `src/pages/SettingPage.xaml`
+  - `src/pages/SettingPage.xaml.cs`
+  - `src/pages/ClearBridgePage.xaml`
+  - `src/pages/ClearBridgePage.xaml.cs`
+  - `src/assets/localization/en.json`
+  - `src/assets/localization/zh-Hans.json`
+  - `src/assets/localization/ar.json`
+  - `docs/PHASE3_OCR_TEST_REPORT.md`
+  - `docs/HACKATHON_BUILD_LOG.md`
+  - `docs/DEMO_EVIDENCE_CHECKLIST.md`
+  - `docs/COMPETITION_CHANGES.md`
+- User value:
+  - Makes Phase 3 easier to test and demonstrate by exposing Upload Image clearly, removing duplicate text/OCR controls, and allowing a one-time screen OCR capture from other apps via `Ctrl + Alt + O`.
+- AI-assisted development:
+  - Yes. Codex assisted with implementation, validation, and documentation.
+- Notes:
+  - The hotkey only starts one-time OCR capture; it does not automatically translate, summarize, analyze, monitor regions, or upload images to cloud OCR.
+  - OCR Translation and OCR Summary remain separate user-selected actions and should not be claimed as ClearBridge structured analysis.

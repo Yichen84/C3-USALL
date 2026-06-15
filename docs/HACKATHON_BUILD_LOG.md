@@ -528,3 +528,71 @@ Add real-world image and screen input for ClearBridge while preserving ordinary 
 - Branch: `feature/clearbridge-phase3-ocr`
 - Commit hash: this Phase 3 implementation commit
 - Commit message: `feat(ocr): add review workflow with translation summary and ClearBridge actions`
+
+## 2026-06-15 - Phase 3 / Manual Test Interaction Fixes
+
+### Goal
+Fix Phase 3 manual-test blockers around OCR discoverability, duplicate text/OCR controls, and the missing global one-time OCR shortcut while preserving the separate Translate, Summarize, and ClearBridge Analyze exits.
+
+### Work Completed
+- Made `Capture Screen Region` and `Upload Image` the primary visible entry buttons at the top of the OCR input area.
+- Kept image upload on the shared OCR Review path: image preview, file/source metadata, Local OCR, editable extracted text, and user-selected next action.
+- Added a configurable global one-time Screen OCR hotkey using Windows `RegisterHotKey`.
+- Set the default hotkey to `Ctrl + Alt + O`.
+- Added Settings controls for enabling/disabling the hotkey, changing the hotkey, applying it, and showing invalid/conflict feedback.
+- Routed the hotkey to the existing ClearBridge screen-region capture flow instead of creating a separate OCR path.
+- Simplified ClearBridge input modes so Text mode shows Notice Text controls, while OCR modes show OCR Review actions and hide duplicate Example/Clear/Analyze text controls.
+- Added OCR source/file metadata to the OCR Review status line.
+- Verified by code inspection that OCR Translation, OCR Summary, and ClearBridge OCR write distinct History feature types and OCR metadata without storing images or Base64.
+
+### Files Changed
+- `src/models/Setting.cs`
+- `src/services/Ocr/ScreenOcrHotkeyService.cs`
+- `src/windows/MainWindow.xaml.cs`
+- `src/pages/SettingPage.xaml`
+- `src/pages/SettingPage.xaml.cs`
+- `src/pages/ClearBridgePage.xaml`
+- `src/pages/ClearBridgePage.xaml.cs`
+- `src/assets/localization/en.json`
+- `src/assets/localization/zh-Hans.json`
+- `src/assets/localization/ar.json`
+- `docs/PHASE3_OCR_TEST_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+- `docs/COMPETITION_CHANGES.md`
+
+### Technical Decisions
+- Used `RegisterHotKey` directly because repository search found no existing global hotkey registration infrastructure to reuse.
+- Kept the hotkey as a one-time capture shortcut only; it does not start continuous monitoring, cloud OCR, translation, summary, or ClearBridge analysis automatically.
+- Registered the hotkey from `MainWindow` and reused `ClearBridgePage.StartScreenOcrCaptureAsync()` so button capture and hotkey capture share the same implementation.
+- Used mode-based visibility instead of adding another extracted-text box, reducing duplicate state between Notice Text and OCR Review.
+- Kept History UI unchanged because the existing metadata writes already distinguish OCR Translation, OCR Summary, and ClearBridge OCR.
+
+### AI Tools Used
+- Codex: implementation, build validation, and documentation updates.
+- ChatGPT: no new separate usage recorded in this fix pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- Windows global hotkey API (`RegisterHotKey` / `UnregisterHotKey`).
+- Windows OCR API remains the Local OCR engine.
+- OpenAI-compatible API remains optional for AI OCR and summary when configured by the user.
+- Existing translation providers remain the OCR Translation providers.
+
+### Tests Performed
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 errors and existing nullable warnings.
+- `dotnet restore .\LiveCaptionsTranslator.sln`: passed after allowing access to user NuGet configuration.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed after allowing access to user NuGet/MSBuild configuration.
+- Code inspection confirmed `OCR Translation`, `OCR Summary`, and `ClearBridge OCR` History feature types and OCR metadata fields are written without image persistence.
+- Code inspection confirmed screen capture uses `SystemInformation.VirtualScreen`, covering multi-monitor and negative-coordinate layouts at the code-path level.
+
+### Known Limitations
+- Physical desktop QA is still needed for `Ctrl + Alt + O` while another app has focus.
+- Physical 125%/150% DPI and multi-monitor validation is still needed.
+- Windows Local OCR quality depends on installed OCR language support and image quality.
+- The existing ClearBridge mouse wheel issue over some result areas remains a known issue.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase3-ocr`
+- Commit hash: this interaction-fix commit
+- Commit message: `fix(ocr): expose image upload and simplify review workflow`
