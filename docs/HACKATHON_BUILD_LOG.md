@@ -387,3 +387,59 @@ Fix the crash found during manual Phase 2 testing when entering Settings or chan
 - Branch: `feature/clearbridge-phase2-language`
 - Commit hash: this stabilization commit
 - Commit message: `fix(localization): stabilize language changes and settings navigation`
+
+## 2026-06-15 - Phase 2 / Manual Validation and PR Closeout
+
+### Goal
+Record the final manual regression result before merging Phase 2 into `main`.
+
+### Work Completed
+- Recorded that English, Simplified Chinese, and Arabic UI all passed manual regression.
+- Recorded that Arabic RTL layout passed manual regression.
+- Recorded that UI Language changes are intentionally applied after restart and that restart behavior passed.
+- Recorded that Settings, ClearBridge, and History page switching no longer crashes after the stabilization fix.
+- Recorded that English, Simplified Chinese, and Arabic ClearBridge output passed manual regression.
+- Recorded that ClearBridge priority values are localized.
+- Kept the Phase 1 mouse wheel behavior as a known issue.
+
+### Files Changed
+- `docs/PHASE1_TEST_REPORT.md`
+- `docs/PHASE2_LANGUAGE_TEST_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+- `docs/COMPETITION_CHANGES.md`
+
+### Technical Decisions
+- Kept the restart-required UI language behavior because it avoids mutating a loaded WPF visual tree during navigation or RTL changes.
+- Kept the right-side scrollbar workaround documented rather than claiming the remaining mouse wheel issue is fixed.
+
+### AI Tools Used
+- Codex: documentation update, GitHub PR closeout, main verification, packaging, and tag workflow.
+- ChatGPT: no new separate usage recorded in this closeout pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- GitHub: PR readiness, PR merge, main verification, and annotated tag push.
+- Runtime AI option remains OpenAI-compatible API when configured by the user.
+- Mock Provider remains fixed local demo data and is not real AI.
+
+### Tests Performed
+- Manual regression reported by the team:
+  - English UI: passed.
+  - Simplified Chinese UI: passed.
+  - Arabic UI / RTL: passed.
+  - UI Language restart behavior: passed.
+  - Settings, ClearBridge, and History page switching: passed with no crash.
+  - English, Simplified Chinese, and Arabic output: passed.
+  - Priority localization: passed.
+- Final main restore, format, build, publish, fixed package generation, and GitHub Actions checks are performed during closeout.
+
+### Known Limitations
+- Mouse wheel scrolling over some generated ClearBridge result areas remains unreliable.
+- Demo recording should use the right-side scrollbar for long results.
+- OpenAI-compatible multilingual output quality depends on the configured model and user API settings.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase2-language`
+- Commit hash: this validation documentation commit
+- Commit message: `docs(hackathon): record Phase 2 manual validation`

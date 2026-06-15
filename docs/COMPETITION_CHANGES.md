@@ -226,3 +226,20 @@ This document separates upstream functionality from hackathon work. Do not claim
   - Prevents Settings/UI-language crashes by applying UI language changes after restart, localizes priority values, and keeps the competition output picker focused on English, Simplified Chinese, and Arabic.
 - AI-assisted development:
   - Yes. Codex assisted with crash diagnosis, implementation, build validation, and documentation.
+
+### Phase 2 Manual Validation and Closeout
+
+- Start date: 2026-06-15
+- Completion date: 2026-06-15
+- Corresponding commits:
+  - This validation documentation commit - `docs(hackathon): record Phase 2 manual validation`
+- Corresponding files:
+  - `docs/PHASE1_TEST_REPORT.md`
+  - `docs/PHASE2_LANGUAGE_TEST_REPORT.md`
+  - `docs/HACKATHON_BUILD_LOG.md`
+  - `docs/DEMO_EVIDENCE_CHECKLIST.md`
+  - `docs/COMPETITION_CHANGES.md`
+- User value:
+  - Confirms the Phase 2 multilingual UI/output work is ready for PR closeout while preserving the known mouse wheel limitation honestly.
+- AI-assisted development:
+  - Yes. Codex assisted with documentation, GitHub PR closeout, main verification, fixed package generation, and milestone tagging.

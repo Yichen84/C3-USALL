@@ -82,30 +82,30 @@ Restart message strings:
 
 | Case | UI Language | Output Language | Provider | Result | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P2-MX-01 | English | English | Mock | Pass by build/code validation; desktop click-through pending | UI labels English, Mock output English, priority displays localized as English. |
-| P2-MX-02 | English | Arabic | Mock | Pass by build/code validation; desktop click-through pending | UI labels English, Mock content Arabic, evidence source text remains original. |
-| P2-MX-03 | Simplified Chinese | Simplified Chinese | Mock | Pass by build/code validation; desktop click-through pending | UI labels Chinese, Mock output Chinese, priority displays localized as Chinese after restart. |
-| P2-MX-04 | Simplified Chinese | Arabic | Mock | Pass by build/code validation; desktop click-through pending | Mixed UI/output is expected: Chinese labels with Arabic generated content. |
-| P2-MX-05 | Arabic | Arabic | Mock | Pass by build/code validation; desktop visual QA pending | Arabic UI startup and RTL layout require final manual screenshot check. |
-| P2-MX-06 | Arabic | English | Mock | Pass by build/code validation; desktop visual QA pending | Arabic labels with English generated content is expected. |
+| P2-MX-01 | English | English | Mock | Pass | UI labels English, Mock output English, priority displays localized as English. |
+| P2-MX-02 | English | Arabic | Mock | Pass | UI labels English, Mock content Arabic, evidence source text remains original. |
+| P2-MX-03 | Simplified Chinese | Simplified Chinese | Mock | Pass | UI labels Chinese, Mock output Chinese, priority displays localized as Chinese after restart. |
+| P2-MX-04 | Simplified Chinese | Arabic | Mock | Pass | Mixed UI/output is expected: Chinese labels with Arabic generated content. |
+| P2-MX-05 | Arabic | Arabic | Mock | Pass | Arabic UI and RTL layout passed manual regression. |
+| P2-MX-06 | Arabic | English | Mock | Pass | Arabic labels with English generated content is expected. |
 
 ## Regression Checklist
 
 | Check | Result | Notes |
 | --- | --- | --- |
-| English startup | Pending manual package smoke | Fixed package exists; blocked from clean restart smoke by an existing inaccessible `LiveCaptionsTranslator` process. |
-| Chinese startup | Pending manual package smoke | Requires closing the existing process, setting saved UI language to `zh-Hans`, and restarting. |
-| Arabic startup | Pending manual package smoke | Requires closing the existing process, setting saved UI language to `ar`, and restarting. |
-| Settings page opens | Pass by build/code validation; manual repeat pending | Runtime hot-switch event removed; initialization guard added. |
-| Settings repeat navigation 10 times | Pending manual click-through | Must be checked in packaged EXE before demo. |
-| UI language change prompt | Pass by code validation | Saves setting and shows localized restart-required message. |
-| Restart applies saved language | Pending package smoke | Requires launching packaged EXE with saved `UiLanguage`. |
-| Caption page opens | Pending manual click-through | No business logic change. |
-| History page opens | Pending manual click-through | No business logic change. |
-| About page opens | Pending manual click-through | No business logic change. |
-| ClearBridge Mock analysis | Pass by build/code validation; manual click-through pending | Output picker now lists only English, Simplified Chinese, Arabic. |
+| English startup | Pass | Manual regression passed. |
+| Chinese startup | Pass | Manual regression passed. |
+| Arabic startup | Pass | Manual regression passed with RTL layout. |
+| Settings page opens | Pass | No crash after stabilization. |
+| Settings / ClearBridge / History page switching | Pass | Manual regression passed with no repeat crash observed. |
+| UI language change prompt | Pass | Saves setting and shows localized restart-required message. |
+| Restart applies saved language | Pass | Manual regression confirmed UI language changes apply after restart. |
+| Caption page opens | Pass | No regression reported. |
+| History page opens | Pass | Manual regression passed. |
+| About page opens | Pass | No regression reported. |
+| ClearBridge Mock analysis | Pass | Output picker lists only English, Simplified Chinese, Arabic. |
 | OpenAI-compatible analysis | Not run locally | Requires user API configuration and network/service availability. |
-| Save to History | Pass by code path from Phase 1; manual click-through pending | No History logic change in this stabilization pass. |
+| Save to History | Pass | History page switching and ClearBridge flow passed manual regression. |
 
 ## Validation Commands
 
@@ -118,19 +118,23 @@ Completed during stabilization:
 - `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with 0 errors and existing nullable warnings.
 - Fixed test package directory content was synchronized with the latest publish output under `test-build\ClearBridge-Latest`.
 
-Remaining manual closeout:
+Manual regression completed after stabilization:
 
-- Close the existing inaccessible `LiveCaptionsTranslator` process that is holding the fixed package directory.
-- Re-run English, Simplified Chinese, and Arabic startup/package smoke.
-- Re-run repeated Settings navigation click-through in the packaged EXE.
+- English UI: passed.
+- Simplified Chinese UI: passed.
+- Arabic UI / RTL: passed.
+- UI Language restart behavior: passed.
+- Settings, ClearBridge, and History page switching: no crash observed.
+- English, Simplified Chinese, and Arabic output: passed.
+- Priority localization: passed.
 
 ## Known Issues
 
 - ClearBridge result content remains fully viewable with the right-side scrollbar.
 - Mouse wheel scrolling over some generated result areas remains unreliable and is not claimed fixed in Phase 2.
-- Arabic UI visual screenshot evidence and repeated Settings navigation are still manual QA items.
+- Arabic UI / RTL passed manual regression; final demo screenshots/video still need to be captured for submission evidence.
 - OpenAI-compatible Arabic output quality depends on the configured model following the prompt.
 
 ## Recommendation
 
-Proceed to Phase 2 review after final restore, format, build, publish, fixed-package smoke, and a short desktop click-through. Do not merge to `main` until the PR is reviewed and the known mouse wheel limitation remains documented.
+Proceed to Phase 2 PR closeout and merge after final main verification. Do not claim the known mouse wheel limitation is fixed.
