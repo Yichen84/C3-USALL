@@ -31,6 +31,8 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 ### OpenAI-compatible API
 
 - Optional runtime provider for ClearBridge structured analysis.
+- Optional runtime provider for Phase 3 AI OCR when the user explicitly chooses AI OCR and confirms image upload.
+- Optional runtime provider for Phase 3 plain OCR summary when the user clicks Summarize.
 - Uses existing user-configured OpenAI-compatible settings.
 - API key is read from local settings and must not be committed.
 - Prompts ask for strict JSON and source-backed claims.
@@ -41,6 +43,20 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 
 - Present in the upstream app for translation features.
 - Not part of the new ClearBridge Phase 1 structured action analysis path.
+- May be used as an ordinary OCR Translation provider if selected by the user and configured in the app.
+
+### Windows OCR API
+
+- Used in Phase 3 for Local OCR through `Windows.Media.Ocr`.
+- Runs on the user's Windows device and does not upload the image.
+- No new third-party OCR NuGet package is added.
+- Accuracy depends on Windows OCR language support and image quality.
+
+### AI OCR
+
+- Uses the configured OpenAI-compatible API only after the user clicks Retry with AI OCR and confirms upload.
+- Prompt asks only for text extraction, not summary, translation, or ClearBridge analysis.
+- Images may contain private information and are subject to the selected provider's policies.
 
 ### Mock Provider
 
@@ -53,10 +69,13 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 ## Data Sources
 
 - User-pasted notices or messages.
+- User-captured screen regions for Phase 3 OCR.
+- User-uploaded image files for Phase 3 OCR.
 - Built-in demonstration sample:
   - "Due to extreme weather conditions, all outdoor extracurricular activities scheduled after 12:30 PM today are suspended..."
 - No public dataset is used in Phase 1.
 - No public dataset is used in Phase 2.
+- No public dataset is used in Phase 3.
 - No automatic web lookup is performed.
 
 ## Privacy
@@ -67,6 +86,9 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 - ClearBridge diagnostic logging records only provider, operation status, latency, input length, output length, and error type.
 - Logs must not store full pasted source text or full AI response text.
 - History stores the pasted source text and generated analysis result locally in SQLite because the user explicitly requested History integration.
+- Phase 3 History stores confirmed OCR text and OCR metadata for OCR Translation, OCR Summary, and ClearBridge OCR records.
+- Phase 3 History does not store raw screenshots, uploaded image files, or Base64 image content.
+- AI OCR requires explicit confirmation before any image is sent to a cloud provider.
 - Mock data is clearly marked as Mock Mode.
 - UI language preference is stored locally in `setting.json` as `UiLanguage`.
 - UI language changes are saved locally and applied after restarting the application.

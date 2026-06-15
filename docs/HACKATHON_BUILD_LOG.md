@@ -443,3 +443,86 @@ Record the final manual regression result before merging Phase 2 into `main`.
 - Branch: `feature/clearbridge-phase2-language`
 - Commit hash: this validation documentation commit
 - Commit message: `docs(hackathon): record Phase 2 manual validation`
+
+## 2026-06-15 - Phase 3 / One-Time OCR Input and Review Workflow
+
+### Goal
+Add real-world image and screen input for ClearBridge while preserving ordinary translation and manual summary as separate user-selected actions after OCR review.
+
+### Work Completed
+- Added one-time screen region capture using a temporary overlay and in-memory screenshot handling.
+- Added image upload for PNG, JPG, JPEG, and BMP files.
+- Added Local OCR through the Windows OCR API.
+- Added optional AI OCR through the existing OpenAI-compatible configuration, with explicit user confirmation before image upload.
+- Added an OCR Review area with image preview, editable extracted text, OCR metadata, privacy/review warning, Retry OCR, Retry with AI OCR, Clear, and Cancel.
+- Added three independent post-OCR actions: Translate, Summarize, and ClearBridge Analyze.
+- Added separate result panels for OCR Translation, OCR Summary, and ClearBridge structured analysis so fields do not mix.
+- Extended local History metadata for OCR input type, OCR engine, cloud/local status, edited OCR text, and feature type.
+- Added English, Simplified Chinese, and Arabic UI strings for the OCR flow.
+- Added `docs/PHASE3_OCR_TEST_REPORT.md`.
+
+### Files Changed
+- `LiveCaptionsTranslator.csproj`
+- `src/models/ClearBridge/ClearBridgeInputType.cs`
+- `src/services/Ocr/ClearBridgeImageInput.cs`
+- `src/services/Ocr/ClearBridgeOcrResult.cs`
+- `src/services/Ocr/ClearBridgeOcrException.cs`
+- `src/services/Ocr/IClearBridgeOcrProvider.cs`
+- `src/services/Ocr/OcrImageUtility.cs`
+- `src/services/Ocr/WindowsLocalOcrProvider.cs`
+- `src/services/Ocr/AiVisionOcrProvider.cs`
+- `src/services/Ocr/ScreenRegionCaptureService.cs`
+- `src/services/ClearBridge/OpenAiPlainSummaryService.cs`
+- `src/pages/ClearBridgePage.xaml`
+- `src/pages/ClearBridgePage.xaml.cs`
+- `src/utils/HistoryLogger.cs`
+- `src/assets/localization/en.json`
+- `src/assets/localization/zh-Hans.json`
+- `src/assets/localization/ar.json`
+- `docs/PHASE3_OCR_TEST_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/COMPETITION_CHANGES.md`
+- `docs/AI_AND_DATA_DISCLOSURE.md`
+- `docs/SUBMISSION_DRAFT.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+
+### Technical Decisions
+- Used Windows OCR API instead of adding a new OCR NuGet dependency, reducing license and distribution risk for Phase 3.
+- Kept OCR and post-processing providers separate: OCR extracts text, Translation translates, Summary summarizes, and ClearBridge performs structured action analysis.
+- Made AI OCR opt-in with a confirmation dialog because images may contain private information and cloud OCR may incur API cost.
+- Kept raw images in memory only; History stores confirmed OCR text and metadata, not image files or Base64 content.
+- Used separate result panels to avoid mixing ordinary translation, plain summary, and ClearBridge structured fields.
+- Current repository baseline did not contain a reusable OCR workflow implementation beyond OCR labels, so Phase 3 added the one-time OCR review path and reused the existing translation provider for ordinary OCR translation.
+
+### AI Tools Used
+- Codex: repository inspection, OCR workflow implementation, build validation, and documentation updates.
+- ChatGPT: no new separate usage recorded in this Phase 3 implementation pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- Windows OCR API (`Windows.Media.Ocr`): local OCR engine provided by Windows; no new third-party OCR NuGet package was added.
+- Windows Forms framework reference: used only for the temporary one-time screen selection overlay.
+- OpenAI-compatible API: optional runtime AI OCR and plain summary provider when configured by the user.
+- Existing translation providers: reused for OCR Translation.
+- Upstream open-source project: LiveCaptions Translator by SakiRinn and contributors.
+
+### Tests Performed
+- Searched the current repository for an existing OCR implementation; only OCR labels were found, not a reusable OCR workflow.
+- `dotnet restore .\LiveCaptionsTranslator.sln`: passed after allowing access to user NuGet configuration.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed after local platform analyzer suppression for the Windows OCR bridge.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 errors and existing nullable warnings.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with 0 errors and existing nullable warnings.
+- JSON parse checks for English, Simplified Chinese, and Arabic localization files: passed.
+- Manual OCR, DPI, dual-monitor, AI OCR, and provider-result QA are pending and tracked in `docs/PHASE3_OCR_TEST_REPORT.md`.
+
+### Known Limitations
+- Screen capture at 125% and 150% DPI and multi-monitor negative-coordinate layouts still needs manual verification.
+- Windows Local OCR accuracy depends on installed Windows OCR language support and image quality.
+- AI OCR requires a configured OpenAI-compatible vision-capable model.
+- The existing ClearBridge mouse wheel issue over some result areas remains a known issue.
+- This phase does not implement continuous region monitoring, PDF batch OCR, video OCR, reminders, or automatic actions.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase3-ocr`
+- Commit hash: this Phase 3 implementation commit
+- Commit message: `feat(ocr): add review workflow with translation summary and ClearBridge actions`
