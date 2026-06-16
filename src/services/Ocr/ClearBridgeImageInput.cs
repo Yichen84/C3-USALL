@@ -1,4 +1,5 @@
 using System.IO;
+using System.Drawing;
 using System.Windows.Media.Imaging;
 
 namespace LiveCaptionsTranslator.services.Ocr
@@ -17,11 +18,18 @@ namespace LiveCaptionsTranslator.services.Ocr
 
         public long ByteLength => PngBytes.LongLength;
 
-        public ClearBridgeImageInput(BitmapSource image, byte[] pngBytes, string sourceName)
+        public Rectangle? SourceScreenBounds { get; init; }
+
+        public ClearBridgeImageInput(
+            BitmapSource image,
+            byte[] pngBytes,
+            string sourceName,
+            Rectangle? sourceScreenBounds = null)
         {
             Image = image;
             PngBytes = pngBytes;
             SourceName = sourceName;
+            SourceScreenBounds = sourceScreenBounds;
         }
 
         public BitmapImage ToPreviewImage()

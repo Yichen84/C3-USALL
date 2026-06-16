@@ -28,7 +28,7 @@ namespace LiveCaptionsTranslator.services.Ocr
     {
         public const int HotkeyId = 0x4342;
         public const int WmHotkey = 0x0312;
-        public const string DefaultHotkey = "Ctrl + Alt + O";
+        public const string DefaultHotkey = "Alt + V";
 
         private const uint ModAlt = 0x0001;
         private const uint ModControl = 0x0002;

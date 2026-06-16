@@ -12,6 +12,8 @@ namespace LiveCaptionsTranslator.models
     public class Setting : INotifyPropertyChanged
     {
         public static readonly string FILENAME = "setting.json";
+        private const string DefaultScreenOcrHotkey = "Alt + V";
+        private const string PreviousDefaultScreenOcrHotkey = "Ctrl + Alt + O";
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -25,7 +27,7 @@ namespace LiveCaptionsTranslator.models
         private string apiName;
         private string targetLanguage;
         private string uiLanguage = "en";
-        private string screenOcrHotkey = "Ctrl + Alt + O";
+        private string screenOcrHotkey = DefaultScreenOcrHotkey;
         private string prompt;
         private string? ignoredUpdateVersion;
 
@@ -112,10 +114,10 @@ namespace LiveCaptionsTranslator.models
         }
         public string ScreenOcrHotkey
         {
-            get => string.IsNullOrWhiteSpace(screenOcrHotkey) ? "Ctrl + Alt + O" : screenOcrHotkey;
+            get => string.IsNullOrWhiteSpace(screenOcrHotkey) ? DefaultScreenOcrHotkey : screenOcrHotkey;
             set
             {
-                screenOcrHotkey = string.IsNullOrWhiteSpace(value) ? "Ctrl + Alt + O" : value;
+                screenOcrHotkey = string.IsNullOrWhiteSpace(value) ? DefaultScreenOcrHotkey : value;
                 OnPropertyChanged("ScreenOcrHotkey");
             }
         }
@@ -302,6 +304,14 @@ namespace LiveCaptionsTranslator.models
             {
                 if (!setting.ConfigIndices.ContainsKey(key))
                     setting.ConfigIndices[key] = 0;
+            }
+
+            if (string.Equals(
+                setting.ScreenOcrHotkey,
+                PreviousDefaultScreenOcrHotkey,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                setting.ScreenOcrHotkey = DefaultScreenOcrHotkey;
             }
 
             return setting;
