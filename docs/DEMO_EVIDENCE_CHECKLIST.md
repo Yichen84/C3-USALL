@@ -24,8 +24,11 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] UI language and ClearBridge output language shown as independent controls.
 - [ ] Screen region OCR capture flow.
 - [ ] Image upload OCR flow.
-- [ ] Global Screen OCR hotkey (`Ctrl + Alt + O`) from another app.
+- [ ] Global Screen OCR hotkey (`Alt + V`) from another app.
 - [ ] Screen OCR hotkey setting, disable toggle, and conflict/invalid message.
+- [ ] Dark translucent OCR quick action card near the selected screen region.
+- [ ] OCR quick action card status line with OCR engine, character count, and Local/Cloud label.
+- [ ] OCR quick action card buttons: Translate, Summarize, Analyze with ClearBridge, Open Full Review, Retry OCR, Close.
 - [ ] OCR Review text editing before action.
 - [ ] OCR Translate result with no Priority or Checklist.
 - [ ] OCR Summary result with no structured action fields.
@@ -65,12 +68,15 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - Fixed local test package path: `D:\USALL\USALL-Git\test-build\ClearBridge-Latest\LiveCaptionsTranslator.exe`.
 - Phase 3 OCR Review: implemented; capture screen region, upload image, editable extracted text, and three action buttons.
 - Phase 3 input modes: implemented; capture Text mode separately from OCR modes to show that duplicate Notice Text and OCR Review controls no longer appear together.
-- Screen OCR hotkey: implemented with default `Ctrl + Alt + O`; capture from another app during manual desktop QA.
+- Screen OCR hotkey: implemented with current default `Alt + V`; capture from browser, PDF reader, or chat software during manual desktop QA.
 - Screen OCR hotkey settings: implemented; capture enabled/disabled state, changed shortcut, and invalid/conflict feedback if available.
+- OCR quick action card: implemented as a compact dark translucent window after `Alt + V` capture and Local OCR; capture the card near the selected screen area.
+- Quick card versus Full Review: capture that the card offers fast Translate/Summarize/ClearBridge actions, while Open Full Review shows editable OCR text and full image preview.
+- Quick card confirmation rule: capture or narrate that unclear/too-short OCR text is sent to Full Review before ClearBridge action analysis.
 - Image upload: implemented as a first-level OCR input button; capture PNG/JPG/JPEG/BMP upload path with file/source metadata and preview.
 - OCR Translate: implemented; capture that translation result is separate from ClearBridge fields.
 - OCR Summary: implemented; capture that summary result is separate from ClearBridge fields.
 - ClearBridge OCR: implemented; capture action analysis after reviewing OCR text.
 - AI OCR confirmation: implemented; capture confirmation dialog before any cloud upload.
 - Windows Local OCR: implemented through Windows OCR API; capture accuracy examples after manual QA.
-- DPI and multi-monitor: code uses the virtual screen bounds; still collect 125%/150% DPI and dual-monitor evidence manually.
+- DPI and multi-monitor: quick card placement clamps to the selected monitor working area by code; still collect 100%/125%/150% DPI, secondary monitor, and negative-coordinate monitor evidence manually.

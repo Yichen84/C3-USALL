@@ -538,7 +538,7 @@ Fix Phase 3 manual-test blockers around OCR discoverability, duplicate text/OCR 
 - Made `Capture Screen Region` and `Upload Image` the primary visible entry buttons at the top of the OCR input area.
 - Kept image upload on the shared OCR Review path: image preview, file/source metadata, Local OCR, editable extracted text, and user-selected next action.
 - Added a configurable global one-time Screen OCR hotkey using Windows `RegisterHotKey`.
-- Set the default hotkey to `Ctrl + Alt + O`.
+- Set the initial default hotkey to `Ctrl + Alt + O`; this was superseded on 2026-06-16 by the `Alt + V` quick action workflow.
 - Added Settings controls for enabling/disabling the hotkey, changing the hotkey, applying it, and showing invalid/conflict feedback.
 - Routed the hotkey to the existing ClearBridge screen-region capture flow instead of creating a separate OCR path.
 - Simplified ClearBridge input modes so Text mode shows Notice Text controls, while OCR modes show OCR Review actions and hide duplicate Example/Clear/Analyze text controls.
@@ -587,7 +587,7 @@ Fix Phase 3 manual-test blockers around OCR discoverability, duplicate text/OCR 
 - Code inspection confirmed screen capture uses `SystemInformation.VirtualScreen`, covering multi-monitor and negative-coordinate layouts at the code-path level.
 
 ### Known Limitations
-- Physical desktop QA is still needed for `Ctrl + Alt + O` while another app has focus.
+- Physical desktop QA is still needed for the current `Alt + V` shortcut while another app has focus.
 - Physical 125%/150% DPI and multi-monitor validation is still needed.
 - Windows Local OCR quality depends on installed OCR language support and image quality.
 - The existing ClearBridge mouse wheel issue over some result areas remains a known issue.
@@ -596,3 +596,77 @@ Fix Phase 3 manual-test blockers around OCR discoverability, duplicate text/OCR 
 - Branch: `feature/clearbridge-phase3-ocr`
 - Commit hash: this interaction-fix commit
 - Commit message: `fix(ocr): expose image upload and simplify review workflow`
+
+## 2026-06-16 - Phase 3 / Alt+V OCR Quick Action Card
+
+### Goal
+Improve the one-time screen OCR interaction so users can press `Alt + V`, select a screen region, review a compact OCR preview near the selected area, and choose the next action without being forced into the full ClearBridge page.
+
+### Work Completed
+- Changed the default Screen OCR hotkey to `Alt + V`.
+- Migrated saved settings that still used the previous default `Ctrl + Alt + O` to the new default, while preserving user-customized shortcuts.
+- Kept Settings support for enabling/disabling the hotkey, editing it, applying changes, saving across restart, and reporting invalid or conflicting registrations.
+- Added a dark translucent, borderless, topmost OCR quick action card after screen-region OCR completes.
+- Added quick card actions for Translate, Summarize, Analyze with ClearBridge, Open Full Review, Retry OCR, and Close.
+- Positioned the card near the selected screen region and clamped it inside the selected monitor working area.
+- Added Full Review and Full Result bridges back into the main ClearBridge page.
+- Kept OCR providers separate from Translation, Summary, and ClearBridge providers.
+- Preserved History writes for `OCR Translation`, `OCR Summary`, and `ClearBridge OCR`.
+- Added English, Simplified Chinese, and Arabic strings for the quick action card.
+
+### Files Changed
+- `src/models/Setting.cs`
+- `src/services/Ocr/ScreenOcrHotkeyService.cs`
+- `src/services/Ocr/ClearBridgeImageInput.cs`
+- `src/services/Ocr/OcrImageUtility.cs`
+- `src/services/Ocr/ScreenRegionCaptureService.cs`
+- `src/windows/MainWindow.xaml.cs`
+- `src/windows/OcrQuickActionWindow.xaml`
+- `src/windows/OcrQuickActionWindow.xaml.cs`
+- `src/pages/ClearBridgePage.xaml.cs`
+- `src/assets/localization/en.json`
+- `src/assets/localization/zh-Hans.json`
+- `src/assets/localization/ar.json`
+- `docs/PHASE3_OCR_TEST_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+- `docs/COMPETITION_CHANGES.md`
+
+### Technical Decisions
+- Used the existing Windows `RegisterHotKey` path and changed only the default shortcut plus setting migration, avoiding a second hidden fallback hotkey.
+- Made the quick card a separate lightweight WPF window so it can appear near the selected area while the main app remains available for full review and full results.
+- Kept the card compact: it shows OCR status, a short text preview, and brief operation results only; full OCR review and complete ClearBridge output stay in the main page.
+- Required Full Review before ClearBridge action analysis when OCR text is too short or visibly unclear, preserving the manual verification rule for high-risk action extraction.
+- Kept Retry OCR on the current OCR provider only; it does not automatically switch Local OCR to AI OCR.
+
+### AI Tools Used
+- Codex: implementation, repository inspection, build validation, and documentation updates.
+- ChatGPT: no new separate usage recorded in this pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- Windows global hotkey API (`RegisterHotKey` / `UnregisterHotKey`).
+- Windows OCR API remains the Local OCR engine.
+- OpenAI-compatible API remains optional for AI OCR, plain summary, and ClearBridge analysis when configured by the user.
+- Existing translation providers remain the OCR Translation providers.
+
+### Tests Performed
+- `dotnet restore .\LiveCaptionsTranslator.sln`: passed after allowing access to user NuGet configuration.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 errors; existing nullable warnings remain.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with 0 errors; existing nullable warnings remain.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed after allowing access to user NuGet/MSBuild configuration.
+- JSON parse checks for English, Simplified Chinese, and Arabic localization files: passed.
+- Physical `Alt + V` hotkey tests in browser, PDF reader, and chat software are pending manual desktop QA.
+- Physical 100%, 125%, 150% DPI, secondary monitor, and negative-coordinate monitor tests are pending manual QA.
+
+### Known Limitations
+- Physical global-hotkey and multi-monitor behavior still requires manual verification outside code/build inspection.
+- Quick card placement is implemented against the selected monitor working area, but negative-coordinate and high-DPI layouts still need real hardware QA.
+- Windows Local OCR quality depends on installed OCR language support and image quality.
+- AI OCR requires explicit user confirmation before cloud upload and a configured vision-capable provider.
+- The existing ClearBridge mouse wheel issue over some result areas remains a known issue.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase3-ocr`
+- Commit hash: `dd1aa5e`
+- Commit message: `feat(ocr): add Alt+V quick action capture workflow`
