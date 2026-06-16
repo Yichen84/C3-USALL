@@ -367,6 +367,68 @@ namespace LiveCaptionsTranslator
             await AnalyzeAsync(currentInputType, currentOcrResult);
         }
 
+        public Task LoadOcrReviewAsync(
+            ClearBridgeImageInput input,
+            ClearBridgeOcrResult result,
+            ClearBridgeInputType inputType,
+            string? confirmedText = null)
+        {
+            currentOcrImage = input;
+            currentOcrResult = result;
+            currentInputType = inputType;
+            currentOutcome = null;
+            historySaved = false;
+            OcrPreviewImage.Source = input.ToPreviewImage();
+            SourceTextBox.Text = confirmedText ?? result.Text;
+            ApplyInputModeState();
+            UpdateOcrMetadata();
+            HideResultPanels();
+            ApplyHistoryButtonState();
+            SetState("OcrCompleted", localizer.T("ClearBridge.Ocr.ReviewNextAction"));
+            return Task.CompletedTask;
+        }
+
+        public async Task LoadOcrTranslationResultAsync(
+            ClearBridgeImageInput input,
+            ClearBridgeOcrResult result,
+            ClearBridgeInputType inputType,
+            string confirmedText,
+            string translatedText,
+            string targetLanguage,
+            string provider)
+        {
+            await LoadOcrReviewAsync(input, result, inputType, confirmedText);
+            RenderTranslationResult(confirmedText, translatedText, targetLanguage, provider);
+            SetState("Completed");
+        }
+
+        public async Task LoadOcrSummaryResultAsync(
+            ClearBridgeImageInput input,
+            ClearBridgeOcrResult result,
+            ClearBridgeInputType inputType,
+            string confirmedText,
+            string summary,
+            string provider)
+        {
+            await LoadOcrReviewAsync(input, result, inputType, confirmedText);
+            RenderSummaryResult(confirmedText, summary, provider);
+            SetState("Completed");
+        }
+
+        public async Task LoadOcrAnalysisResultAsync(
+            ClearBridgeImageInput input,
+            ClearBridgeOcrResult result,
+            ClearBridgeInputType inputType,
+            string confirmedText,
+            CrisisActionAnalysisOutcome outcome)
+        {
+            await LoadOcrReviewAsync(input, result, inputType, confirmedText);
+            currentOutcome = outcome;
+            historySaved = true;
+            RenderResult(outcome);
+            SetState(outcome.IsMock ? "MockMode" : "Completed");
+        }
+
         private async Task LoadOcrImageAsync(
             ClearBridgeImageInput input,
             ClearBridgeInputType inputType,

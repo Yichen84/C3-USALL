@@ -44,10 +44,17 @@ namespace LiveCaptionsTranslator.services.Ocr
             }
         }
 
-        public static ClearBridgeImageInput FromBitmapSource(BitmapSource source, string sourceName)
+        public static ClearBridgeImageInput FromBitmapSource(
+            BitmapSource source,
+            string sourceName,
+            System.Drawing.Rectangle? sourceScreenBounds = null)
         {
             var normalized = NormalizeForOcr(source);
-            return new ClearBridgeImageInput(normalized, EncodePng(normalized), sourceName);
+            return new ClearBridgeImageInput(
+                normalized,
+                EncodePng(normalized),
+                sourceName,
+                sourceScreenBounds);
         }
 
         public static byte[] EncodePng(BitmapSource source)

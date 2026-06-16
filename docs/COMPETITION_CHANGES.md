@@ -293,9 +293,38 @@ This document separates upstream functionality from hackathon work. Do not claim
   - `docs/DEMO_EVIDENCE_CHECKLIST.md`
   - `docs/COMPETITION_CHANGES.md`
 - User value:
-  - Makes Phase 3 easier to test and demonstrate by exposing Upload Image clearly, removing duplicate text/OCR controls, and allowing a one-time screen OCR capture from other apps via `Ctrl + Alt + O`.
+  - Made Phase 3 easier to test and demonstrate by exposing Upload Image clearly, removing duplicate text/OCR controls, and adding a configurable one-time screen OCR capture shortcut. The original default was later changed to `Alt + V`.
 - AI-assisted development:
   - Yes. Codex assisted with implementation, validation, and documentation.
 - Notes:
   - The hotkey only starts one-time OCR capture; it does not automatically translate, summarize, analyze, monitor regions, or upload images to cloud OCR.
   - OCR Translation and OCR Summary remain separate user-selected actions and should not be claimed as ClearBridge structured analysis.
+  - The initial default shortcut from this pass was `Ctrl + Alt + O`; it was superseded by the later Phase 3 quick action pass, which uses `Alt + V`.
+
+### Phase 3 Alt+V OCR Quick Action Card
+
+- Start date: 2026-06-16
+- Completion date: 2026-06-16
+- Corresponding commits:
+  - `dd1aa5e` - `feat(ocr): add Alt+V quick action capture workflow`
+- Corresponding files:
+  - `src/models/Setting.cs`
+  - `src/services/Ocr/ScreenOcrHotkeyService.cs`
+  - `src/services/Ocr/ClearBridgeImageInput.cs`
+  - `src/services/Ocr/OcrImageUtility.cs`
+  - `src/services/Ocr/ScreenRegionCaptureService.cs`
+  - `src/windows/MainWindow.xaml.cs`
+  - `src/windows/OcrQuickActionWindow.xaml`
+  - `src/windows/OcrQuickActionWindow.xaml.cs`
+  - `src/pages/ClearBridgePage.xaml.cs`
+  - `src/assets/localization/en.json`
+  - `src/assets/localization/zh-Hans.json`
+  - `src/assets/localization/ar.json`
+- User value:
+  - Lets users press `Alt + V`, select a screen area, review a compact OCR preview near the selection, and choose Translate, Summarize, ClearBridge Analyze, Full Review, Retry OCR, or Close without being forced into the full ClearBridge page.
+- AI-assisted development:
+  - Yes. Codex assisted with implementation, validation, and documentation.
+- Notes:
+  - The card is a lightweight convenience layer, not a replacement for the full OCR Review page.
+  - Translate and Summarize can run from current OCR text; ClearBridge action analysis prompts for Full Review when the OCR text appears too short or unclear.
+  - The quick card preserves separate History feature types: `OCR Translation`, `OCR Summary`, and `ClearBridge OCR`.

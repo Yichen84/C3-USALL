@@ -39,7 +39,7 @@ namespace LiveCaptionsTranslator.services.Ocr
                 try
                 {
                     BitmapSource source = OcrImageUtility.CreateBitmapSourceFromHBitmap(hBitmap);
-                    return OcrImageUtility.FromBitmapSource(source, "Screen Region");
+                    return OcrImageUtility.FromBitmapSource(source, "Screen Region", bounds);
                 }
                 finally
                 {

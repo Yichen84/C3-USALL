@@ -21,6 +21,9 @@ namespace LiveCaptionsTranslator
         private HwndSource? hwndSource;
         private bool screenOcrHotkeyRegistered;
         private bool screenOcrCaptureInProgress;
+        private readonly ScreenRegionCaptureService screenRegionCaptureService = new();
+        private readonly WindowsLocalOcrProvider localOcrProvider = new();
+        private OcrQuickActionWindow? ocrQuickActionWindow;
 
         public MainWindow()
         {
@@ -167,36 +170,168 @@ namespace LiveCaptionsTranslator
             }
 
             screenOcrCaptureInProgress = true;
+            var shouldRestoreMainWindow = IsVisible && WindowState != WindowState.Minimized;
             try
             {
-                if (WindowState == WindowState.Minimized)
-                    WindowState = WindowState.Normal;
+                CloseQuickActionWindow();
 
-                if (!IsVisible)
+                if (shouldRestoreMainWindow)
+                    Hide();
+
+                await Task.Delay(160);
+                var input = screenRegionCaptureService.CaptureRegion(CancellationToken.None);
+                if (shouldRestoreMainWindow)
                     Show();
 
-                RootNavigation.Navigate(typeof(ClearBridgePage));
-                await Dispatcher.InvokeAsync(
-                    () => { },
-                    System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                var result = await localOcrProvider.ExtractTextAsync(input, CancellationToken.None);
+                ShowQuickActionWindow(input, result);
+            }
+            catch (OperationCanceledException)
+            {
+                if (shouldRestoreMainWindow)
+                    Show();
+            }
+            catch (ClearBridgeOcrException ex)
+            {
+                if (shouldRestoreMainWindow || !IsVisible)
+                    Show();
 
-                if (ClearBridgePage.Instance == null)
-                {
-                    SnackbarHost.Show(
-                        AppLocalizationService.T("Settings.ScreenOcrHotkey.NavigationFailed"),
-                        AppLocalizationService.T("Settings.ScreenOcrHotkey.NavigationFailed.Detail"),
-                        SnackbarType.Error,
-                        timeout: 4,
-                        closeButton: true);
-                    return;
-                }
+                SnackbarHost.Show(
+                    AppLocalizationService.T("ClearBridge.OcrFailed"),
+                    LocalizeOcrError(ex.ErrorCode),
+                    SnackbarType.Error,
+                    timeout: 4,
+                    closeButton: true);
+            }
+            catch (Exception)
+            {
+                if (shouldRestoreMainWindow || !IsVisible)
+                    Show();
 
-                await ClearBridgePage.Instance.StartScreenOcrCaptureAsync();
+                SnackbarHost.Show(
+                    AppLocalizationService.T("ClearBridge.OcrFailed"),
+                    AppLocalizationService.T("ClearBridge.Ocr.Error.CaptureFailed"),
+                    SnackbarType.Error,
+                    timeout: 4,
+                    closeButton: true);
             }
             finally
             {
                 screenOcrCaptureInProgress = false;
             }
+        }
+
+        private void ShowQuickActionWindow(
+            ClearBridgeImageInput input,
+            ClearBridgeOcrResult result)
+        {
+            ocrQuickActionWindow = new OcrQuickActionWindow(input, result);
+            ocrQuickActionWindow.Closed += (sender, args) =>
+            {
+                if (ReferenceEquals(ocrQuickActionWindow, sender))
+                    ocrQuickActionWindow = null;
+            };
+            ocrQuickActionWindow.Show();
+        }
+
+        private void CloseQuickActionWindow()
+        {
+            if (ocrQuickActionWindow == null)
+                return;
+
+            ocrQuickActionWindow.Close();
+            ocrQuickActionWindow = null;
+        }
+
+        public async Task OpenClearBridgeOcrReviewAsync(
+            ClearBridgeImageInput input,
+            ClearBridgeOcrResult result,
+            models.ClearBridge.ClearBridgeInputType inputType,
+            string confirmedText)
+        {
+            var page = await NavigateToClearBridgePageAsync();
+            await page.LoadOcrReviewAsync(input, result, inputType, confirmedText);
+        }
+
+        public async Task OpenClearBridgeOcrTranslationResultAsync(
+            ClearBridgeImageInput input,
+            ClearBridgeOcrResult result,
+            models.ClearBridge.ClearBridgeInputType inputType,
+            string confirmedText,
+            string translatedText,
+            string targetLanguage,
+            string provider)
+        {
+            var page = await NavigateToClearBridgePageAsync();
+            await page.LoadOcrTranslationResultAsync(
+                input,
+                result,
+                inputType,
+                confirmedText,
+                translatedText,
+                targetLanguage,
+                provider);
+        }
+
+        public async Task OpenClearBridgeOcrSummaryResultAsync(
+            ClearBridgeImageInput input,
+            ClearBridgeOcrResult result,
+            models.ClearBridge.ClearBridgeInputType inputType,
+            string confirmedText,
+            string summary,
+            string provider)
+        {
+            var page = await NavigateToClearBridgePageAsync();
+            await page.LoadOcrSummaryResultAsync(
+                input,
+                result,
+                inputType,
+                confirmedText,
+                summary,
+                provider);
+        }
+
+        public async Task OpenClearBridgeOcrAnalysisResultAsync(
+            ClearBridgeImageInput input,
+            ClearBridgeOcrResult result,
+            models.ClearBridge.ClearBridgeInputType inputType,
+            string confirmedText,
+            models.ClearBridge.CrisisActionAnalysisOutcome outcome)
+        {
+            var page = await NavigateToClearBridgePageAsync();
+            await page.LoadOcrAnalysisResultAsync(
+                input,
+                result,
+                inputType,
+                confirmedText,
+                outcome);
+        }
+
+        private async Task<ClearBridgePage> NavigateToClearBridgePageAsync()
+        {
+            if (WindowState == WindowState.Minimized)
+                WindowState = WindowState.Normal;
+
+            if (!IsVisible)
+                Show();
+
+            RootNavigation.Navigate(typeof(ClearBridgePage));
+            await Dispatcher.InvokeAsync(
+                () => { },
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
+            if (ClearBridgePage.Instance == null)
+                throw new InvalidOperationException("ClearBridge page did not initialize.");
+
+            Activate();
+            return ClearBridgePage.Instance;
+        }
+
+        private static string LocalizeOcrError(string errorCode)
+        {
+            var key = "ClearBridge.Ocr.Error." + errorCode;
+            var value = AppLocalizationService.T(key);
+            return value == key ? AppLocalizationService.T("ClearBridge.Ocr.Error.Unexpected") : value;
         }
 
         private void ApplyLocalization()
