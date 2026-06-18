@@ -84,6 +84,8 @@ The compatibility History row should also use:
 - `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with 0 errors; existing nullable warnings remain.
 - Localization JSON parse checks for English, Simplified Chinese, and Arabic: passed.
 - `git diff --check`: passed.
+- Fixed local test package generated at `test-build\ClearBridge-Latest\LiveCaptionsTranslator.exe`.
+- Fixed package launch smoke: passed; the app process started and closed cleanly.
 
 ## Known Limitations
 

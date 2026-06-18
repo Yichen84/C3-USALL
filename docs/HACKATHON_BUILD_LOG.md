@@ -796,8 +796,10 @@ Allow users to manually choose all real-time captions or a sentence range, then 
 - `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with 0 errors; existing nullable warnings remain.
 - Localization JSON parse checks for English, Simplified Chinese, and Arabic: passed.
 - `git diff --check`: passed.
+- Fixed package generated at `test-build\ClearBridge-Latest\LiveCaptionsTranslator.exe`.
+- Fixed package launch smoke: passed; the app process started and closed cleanly.
 - Phase 4 test report created with implementation checks and pending manual UI/provider cases.
-- Fixed package smoke and manual UI regression will be recorded after final validation in this branch.
+- Manual UI regression remains pending for real caption transcripts, configured provider output quality, Arabic UI, and special display configurations.
 
 ### Known Limitations
 - Phase 4 uses current-session caption analysis history; it does not yet provide a full persisted caption-session browser.
