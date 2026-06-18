@@ -723,3 +723,91 @@ Record final Phase 3 OCR manual validation, close the PR #4 milestone, and prepa
 - Branch: `main`
 - Commit hash: this closeout documentation commit
 - Commit message: `docs(hackathon): record Phase 3 manual validation`
+
+## 2026-06-18 - Phase 4 / Manual Caption Range Analysis
+
+### Goal
+Allow users to manually choose all real-time captions or a sentence range, then run ClearBridge structured action analysis on that selected caption snapshot.
+
+### Work Completed
+- Added a Caption page entry: `Analyze Captions with ClearBridge`.
+- Added a ClearBridge caption range card with All Captions, Sentence Range, From/To fields, total count, selected count, 400-sentence messaging, and preview.
+- Added current-session caption analysis numbering independent from database IDs.
+- Added immutable request snapshot creation at Analyze time.
+- Added conservative preprocessing that removes only consecutive exact duplicate captions and blank captions.
+- Added a caption-specific OpenAI-compatible prompt that treats caption recognition errors and speaker examples carefully.
+- Added a Mock Caption provider for stable no-key caption-analysis demos.
+- Added manual Save to History behavior for caption analysis results.
+- Added `ClearBridge Caption Analysis` History feature type and range metadata columns.
+- Added English, Simplified Chinese, and Arabic UI strings for the new controls.
+- Did not implement automatic rolling summary, reminders, calendar actions, email actions, or Phase 5 automation.
+
+### Files Changed
+- `src/models/Caption.cs`
+- `src/models/ClearBridge/CaptionAnalysisSentence.cs`
+- `src/models/ClearBridge/CaptionAnalysisRequest.cs`
+- `src/models/ClearBridge/ClearBridgeInputType.cs`
+- `src/services/ClearBridge/CaptionAnalysisPreprocessor.cs`
+- `src/services/ClearBridge/CrisisActionAnalysisService.cs`
+- `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
+- `src/services/ClearBridge/CrisisActionPromptMode.cs`
+- `src/services/ClearBridge/MockCaptionCrisisActionAnalysisProvider.cs`
+- `src/services/ClearBridge/OpenAiCrisisActionAnalysisProvider.cs`
+- `src/pages/CaptionPage.xaml`
+- `src/pages/CaptionPage.xaml.cs`
+- `src/pages/ClearBridgePage.xaml`
+- `src/pages/ClearBridgePage.xaml.cs`
+- `src/pages/HistoryPage.xaml.cs`
+- `src/utils/HistoryLogger.cs`
+- `src/windows/MainWindow.xaml.cs`
+- `src/assets/localization/en.json`
+- `src/assets/localization/zh-Hans.json`
+- `src/assets/localization/ar.json`
+- `docs/PHASE4_CAPTION_ANALYSIS_TEST_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/COMPETITION_CHANGES.md`
+- `docs/AI_AND_DATA_DISCLOSURE.md`
+- `docs/SUBMISSION_DRAFT.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+
+### Technical Decisions
+- Used a current-session caption analysis buffer instead of database IDs so user-facing numbering is stable, sequential, and understandable.
+- Kept caption analysis manual: no provider is called until the user chooses scope and clicks Analyze.
+- Preserved a snapshot at Analyze time so newly arriving captions do not enter the in-flight request.
+- Kept deduplication conservative to avoid deleting different spoken content.
+- Used manual History save for caption analysis so AI-generated results are reviewed before becoming a formal saved record.
+- Extended the existing History schema compatibly with new columns instead of replacing the History UI.
+
+### AI Tools Used
+- Codex: implementation, build validation, documentation updates, and test planning.
+- ChatGPT: no new separate usage recorded in this pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- OpenAI-compatible API: optional runtime provider for caption structured analysis.
+- Mock Provider: local fixed-output caption analysis for no-key demos and fallback.
+- Existing LiveCaptions Translator capture/logging flow: source of caption text.
+- SQLite via Microsoft.Data.Sqlite: local History storage.
+
+### Tests Performed
+- `dotnet restore .\LiveCaptionsTranslator.sln`: passed.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 errors; existing nullable warnings remain.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed with 0 errors; existing nullable warnings remain.
+- Localization JSON parse checks for English, Simplified Chinese, and Arabic: passed.
+- `git diff --check`: passed.
+- Phase 4 test report created with implementation checks and pending manual UI/provider cases.
+- Fixed package smoke and manual UI regression will be recorded after final validation in this branch.
+
+### Known Limitations
+- Phase 4 uses current-session caption analysis history; it does not yet provide a full persisted caption-session browser.
+- Deduplication removes only consecutive exact duplicates; it does not aggressively merge partial caption updates.
+- Configured-provider semantic quality still needs manual QA with real classroom/meeting transcripts.
+- Automatic rolling summary is intentionally not implemented.
+- Arabic UI and special DPI/display configurations still require physical manual verification.
+- The existing ClearBridge mouse wheel issue over some result areas remains a known issue.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase4-caption-analysis`
+- Commit hash: `c1b865e`
+- Commit message: `feat(captions): add manual ClearBridge caption range analysis`

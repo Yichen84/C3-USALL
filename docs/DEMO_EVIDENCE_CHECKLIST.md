@@ -34,6 +34,13 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [x] OCR Summary result with no structured action fields.
 - [x] ClearBridge OCR result with action checklist and source evidence.
 - [x] AI OCR confirmation dialog before image upload.
+- [ ] Caption page `Analyze Captions with ClearBridge` entry.
+- [ ] Caption analysis All Captions mode.
+- [ ] Caption analysis Sentence Range mode with From/To fields.
+- [ ] Caption range preview with total and selected sentence counts.
+- [ ] 400-sentence limit message.
+- [ ] ClearBridge Caption Analysis result.
+- [ ] History row with `ClearBridge Caption Analysis`.
 - [ ] Long-result demo uses the right-side scrollbar.
 - [ ] Known mouse wheel limitation is disclosed if showing long results.
 
@@ -80,3 +87,8 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - AI OCR confirmation: manually validated; capture confirmation dialog before any cloud upload.
 - Windows Local OCR: implemented through Windows OCR API; capture accuracy examples after manual QA.
 - DPI and multi-monitor: quick card placement clamps to the selected monitor working area by code. Not fully physically validated on all display configurations.
+- Phase 4 Caption Analysis: implemented in the feature branch; capture Caption page entry, All/Range selector, selected preview, Analyze button, and manual Save to History after final manual QA.
+- Caption source evidence: capture that evidence snippets come from selected caption text.
+- Caption 400-sentence guardrail: capture a range or all-captions state above 400 showing the localized limit message.
+- Caption History: capture `ClearBridge Caption Analysis` as a separate History feature type after saving.
+- Caption auto-processing guardrail: narrate that captions are not automatically sent to providers; the user chooses scope and clicks Analyze.
