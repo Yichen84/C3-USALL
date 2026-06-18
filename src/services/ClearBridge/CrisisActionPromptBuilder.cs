@@ -73,5 +73,36 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 "SELECTED CAPTION TRANSCRIPT:\n" +
                 captionTranscript;
         }
+
+        public static string BuildRollingSummarySystemPrompt(string outputLanguage)
+        {
+            return
+                "You are ClearBridge, a Crisis-to-Action Assistant doing rolling analysis of real-time captions. " +
+                "The user enabled this mode manually. The input includes a compressed previous context and only the current new caption batch. " +
+                "Captions may contain recognition errors, unfinished sentences, repeated partial captions, and spoken corrections. " +
+                $"Write user-visible fields in {outputLanguage}. Keep source_evidence.source_text as exact wording copied from the current batch or from explicit prior context; do not translate or paraphrase source_text. " +
+                "Do not invent tasks, dates, locations, warnings, or decisions. Only write established_facts for information clearly supported by the input. " +
+                "Put uncertain or incomplete information in unresolved_questions. Distinguish examples, suggestions, formal assignments, confirmed decisions, and corrections. " +
+                "If a later caption corrects an earlier fact, keep the latest corrected fact and explain superseded information briefly. " +
+                "Action items, deadlines, warnings, locations, and important facts should include source evidence where possible. " +
+                "The context_cache must be short, structured, and compressed. Do not append forever; deduplicate and keep at most the most useful facts, actions, dates, warnings, locations, and unresolved questions. " +
+                "Do not create reminders, calendar entries, emails, or final professional decisions. " +
+                "Return strict JSON only. Do not output Markdown code blocks. " +
+                "Use exactly this JSON shape: " +
+                "{\"current_topic\":\"\",\"batch_summary\":\"\",\"key_points\":[],\"new_actions\":[{\"task\":\"\",\"deadline\":\"\",\"location\":\"\",\"required_documents\":[]}],\"dates_and_deadlines\":[],\"locations\":[],\"warnings\":[],\"unresolved_questions\":[],\"source_evidence\":[{\"claim\":\"\",\"source_text\":\"\"}],\"context_cache\":{\"current_topic\":\"\",\"established_facts\":[],\"confirmed_actions\":[],\"dates_and_deadlines\":[],\"locations\":[],\"warnings\":[],\"unresolved_questions\":[],\"compressed_narrative\":\"\"}}";
+        }
+
+        public static string BuildRollingSummaryUserPrompt(
+            string previousContextJson,
+            string currentBatchTranscript)
+        {
+            return
+                "Update the rolling summary using the compressed context and the current caption batch. " +
+                "Only the current batch is new. Return valid JSON only.\n\n" +
+                "PREVIOUS COMPRESSED CONTEXT:\n" +
+                previousContextJson +
+                "\n\nCURRENT CAPTION BATCH:\n" +
+                currentBatchTranscript;
+        }
     }
 }

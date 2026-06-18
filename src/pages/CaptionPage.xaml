@@ -13,6 +13,7 @@
     <Grid x:Name="CaptionRoot" Margin="5,5,15,5">
         <Grid.RowDefinitions>
             <RowDefinition x:Name="CaptionAnalysisEntry_Row" Height="Auto" />
+            <RowDefinition x:Name="RollingSummary_Row" Height="Auto" />
             <RowDefinition x:Name="OriginalCaption_Row" Height="Auto" />
             <RowDefinition x:Name="TranslatedCaption_Row" Height="Auto" />
             <RowDefinition x:Name="CaptionLogCard_Row" Height="Auto" />
@@ -33,7 +34,153 @@
             Click="AnalyzeCaptionsButton_Click" />
 
         <ui:Card
+            x:Name="RollingSummaryCard"
             Grid.Row="1"
+            Margin="0,0,0,6"
+            Padding="10">
+            <StackPanel>
+                <DockPanel LastChildFill="False">
+                    <StackPanel DockPanel.Dock="Left">
+                        <TextBlock
+                            x:Name="RollingSummaryHeaderText"
+                            FontSize="15"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="RollingSummaryPrivacyText"
+                            MaxWidth="620"
+                            Margin="0,2,0,0"
+                            FontSize="11"
+                            Opacity="0.74"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock
+                        x:Name="RollingSummaryStatusText"
+                        DockPanel.Dock="Right"
+                        Margin="12,0,0,0"
+                        FontWeight="SemiBold"
+                        TextAlignment="Right" />
+                </DockPanel>
+
+                <WrapPanel Margin="0,8,0,0" Orientation="Horizontal">
+                    <StackPanel MinWidth="150" Margin="0,0,8,6">
+                        <TextBlock x:Name="RollingSummaryProviderLabel" FontSize="11" />
+                        <ComboBox
+                            x:Name="RollingSummaryProviderBox"
+                            MinWidth="145" />
+                    </StackPanel>
+                    <StackPanel MinWidth="170" Margin="0,0,8,6">
+                        <TextBlock x:Name="RollingSummaryOutputLanguageLabel" FontSize="11" />
+                        <ComboBox
+                            x:Name="RollingSummaryOutputLanguageBox"
+                            MinWidth="165" />
+                    </StackPanel>
+                    <StackPanel MinWidth="130" Margin="0,0,8,6">
+                        <TextBlock x:Name="RollingSummaryIntervalLabel" FontSize="11" />
+                        <ComboBox
+                            x:Name="RollingSummaryIntervalBox"
+                            MinWidth="125" />
+                    </StackPanel>
+                </WrapPanel>
+
+                <WrapPanel Margin="0,2,0,0" Orientation="Horizontal">
+                    <Button
+                        x:Name="RollingStartButton"
+                        MinWidth="74"
+                        Margin="0,0,6,6"
+                        Click="RollingStartButton_Click" />
+                    <Button
+                        x:Name="RollingPauseButton"
+                        MinWidth="74"
+                        Margin="0,0,6,6"
+                        Click="RollingPauseButton_Click" />
+                    <Button
+                        x:Name="RollingResumeButton"
+                        MinWidth="74"
+                        Margin="0,0,6,6"
+                        Click="RollingResumeButton_Click" />
+                    <Button
+                        x:Name="RollingStopButton"
+                        MinWidth="74"
+                        Margin="0,0,6,6"
+                        Click="RollingStopButton_Click" />
+                    <Button
+                        x:Name="RollingProcessNowButton"
+                        MinWidth="110"
+                        Margin="0,0,6,6"
+                        Click="RollingProcessNowButton_Click" />
+                    <Button
+                        x:Name="RollingSaveButton"
+                        MinWidth="150"
+                        Margin="0,0,6,6"
+                        Click="RollingSaveButton_Click" />
+                    <Button
+                        x:Name="RollingClearButton"
+                        MinWidth="150"
+                        Margin="0,0,6,6"
+                        Click="RollingClearButton_Click" />
+                </WrapPanel>
+
+                <Border
+                    Margin="0,6,0,0"
+                    Padding="8"
+                    BorderBrush="#16000000"
+                    BorderThickness="0,1,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.ColumnSpan="2">
+                            <TextBlock
+                                x:Name="RollingTopicText"
+                                FontWeight="SemiBold"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                x:Name="RollingSummaryText"
+                                Margin="0,3,0,0"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                x:Name="RollingMetaText"
+                                Margin="0,3,0,0"
+                                FontSize="11"
+                                Opacity="0.74"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,8,8,0">
+                            <TextBlock x:Name="RollingKeyPointsHeaderText" FontWeight="SemiBold" />
+                            <TextBlock x:Name="RollingKeyPointsText" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,8,0,0">
+                            <TextBlock x:Name="RollingActionsHeaderText" FontWeight="SemiBold" />
+                            <TextBlock x:Name="RollingActionsText" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,8,8,0">
+                            <TextBlock x:Name="RollingDatesHeaderText" FontWeight="SemiBold" />
+                            <TextBlock x:Name="RollingDatesText" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="8,8,0,0">
+                            <TextBlock x:Name="RollingWarningsHeaderText" FontWeight="SemiBold" />
+                            <TextBlock x:Name="RollingWarningsText" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Margin="0,8,0,0">
+                            <TextBlock x:Name="RollingUnresolvedHeaderText" FontWeight="SemiBold" />
+                            <TextBlock x:Name="RollingUnresolvedText" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ui:Card>
+
+        <ui:Card
+            Grid.Row="2"
             Padding="8"
             VerticalAlignment="Stretch">
             <TextBlock
@@ -48,7 +195,7 @@
         </ui:Card>
 
         <ui:Card
-            Grid.Row="2"
+            Grid.Row="3"
             MinHeight="43"
             Margin="0,3,0,0"
             Padding="8"
@@ -66,7 +213,7 @@
 
         <ui:Card
             x:Name="LogCards"
-            Grid.Row="3"
+            Grid.Row="4"
             Margin="0,0,0,5"
             Padding="8"
             VerticalAlignment="Top"

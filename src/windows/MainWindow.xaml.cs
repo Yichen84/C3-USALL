@@ -70,6 +70,7 @@ namespace LiveCaptionsTranslator
 
         private void MainWindow_Closed(object? sender, EventArgs e)
         {
+            CaptionPage.Instance?.ClearRollingSummaryForShutdown();
             UnregisterScreenOcrHotkey();
             hwndSource?.RemoveHook(WndProc);
             hwndSource = null;
