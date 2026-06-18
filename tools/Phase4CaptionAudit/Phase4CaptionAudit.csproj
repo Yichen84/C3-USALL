@@ -14,6 +14,8 @@
     <Compile Include="..\..\src\services\ClearBridge\ClearBridgeInputLimits.cs" Link="Services\ClearBridgeInputLimits.cs" />
     <Compile Include="..\..\src\services\ClearBridge\ClearBridgeOutputLanguages.cs" Link="Services\ClearBridgeOutputLanguages.cs" />
     <Compile Include="..\..\src\services\ClearBridge\CrisisActionJsonParser.cs" Link="Services\CrisisActionJsonParser.cs" />
+    <Compile Include="..\..\src\services\ClearBridge\CrisisActionPromptBuilder.cs" Link="Services\CrisisActionPromptBuilder.cs" />
+    <Compile Include="..\..\src\services\ClearBridge\CrisisActionSourceEvidenceSanitizer.cs" Link="Services\CrisisActionSourceEvidenceSanitizer.cs" />
     <Compile Include="..\..\src\services\ClearBridge\ICrisisActionAnalysisProvider.cs" Link="Services\ICrisisActionAnalysisProvider.cs" />
     <Compile Include="..\..\src\services\ClearBridge\MockCaptionCrisisActionAnalysisProvider.cs" Link="Services\MockCaptionCrisisActionAnalysisProvider.cs" />
   </ItemGroup>

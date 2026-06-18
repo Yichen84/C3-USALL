@@ -1,6 +1,9 @@
 using LiveCaptionsTranslator.models.ClearBridge;
 using LiveCaptionsTranslator.services.ClearBridge;
 
+if (args.Contains("--real-api", StringComparer.OrdinalIgnoreCase))
+    return await RealApiValidation.RunAsync(args);
+
 var tests = new List<(string Name, Func<Task> Test)>
 {
     ("Range boundaries are inclusive", TestRangeBoundariesAsync),
@@ -11,6 +14,7 @@ var tests = new List<(string Name, Func<Task> Test)>
     ("Mock no-action captions do not invent actions", TestNoActionMockAsync),
     ("Mock ambiguous captions produce unclear items", TestAmbiguousMockAsync),
     ("JSON parser handles invalid and partial provider output", TestJsonParserAsync),
+    ("Caption evidence sanitizer removes unsupported source text", TestEvidenceSanitizerAsync),
     ("Cancellation is surfaced without producing a result", TestCancellationAsync)
 };
 
@@ -232,6 +236,40 @@ static Task TestJsonParserAsync()
     AssertEqual(1, partialLists.Actions.Count, "Blank actions should be removed.");
     AssertEqual(1, partialLists.SourceEvidence.Count, "Blank evidence entries should be removed.");
 
+    return Task.CompletedTask;
+}
+
+static Task TestEvidenceSanitizerAsync()
+{
+    var result = new CrisisActionAnalysisResult
+    {
+        SourceEvidence =
+        [
+            new SourceEvidenceItem
+            {
+                Claim = "Exact evidence",
+                SourceText = "Submit worksheet by Friday."
+            },
+            new SourceEvidenceItem
+            {
+                Claim = "Paraphrased evidence",
+                SourceText = "The worksheet should be submitted before Friday."
+            },
+            new SourceEvidenceItem
+            {
+                Claim = "Empty evidence",
+                SourceText = ""
+            }
+        ]
+    };
+
+    CrisisActionSourceEvidenceSanitizer.KeepOnlyExactSourceEvidence(
+        result,
+        "[1] Submit worksheet by Friday.");
+
+    AssertEqual(2, result.SourceEvidence.Count, "Unsupported paraphrased source evidence should be removed.");
+    Assert(result.SourceEvidence.Any(item => item.SourceText == "Submit worksheet by Friday."), "Exact evidence should remain.");
+    Assert(result.SourceEvidence.Any(item => item.SourceText == ""), "Empty evidence should remain allowed for uncertain claims.");
     return Task.CompletedTask;
 }
 
