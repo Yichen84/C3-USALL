@@ -150,6 +150,48 @@ The compatibility History row should also use:
 - No API key, Authorization header, hidden system prompt, image, or Base64 is saved to History.
 - Inherited upstream Google credential-like constant in `src/apis/TranslateAPI.cs`; no evidence of user secret exposure. Separate lightweight investigation recommended.
 
+## Related Caption Translation Provider Compatibility Fix - 2026-06-18
+
+Context:
+- Related caption translation provider compatibility fix discovered during Phase 4 desktop validation.
+- ClearBridge OpenAI-compatible requests were succeeding with `gpt-4.1-mini`, while realtime caption translation through the OpenAI provider returned `400 BadRequest`.
+- The configured endpoint was `https://api.openai.com/v1/chat/completions`.
+- The API key was not printed, logged, copied, committed, or written to this report.
+
+Root cause:
+- The realtime caption translation OpenAI path used a rotating legacy/fallback request builder intended for multiple LLM-compatible providers.
+- The failing request included OpenAI-incompatible fields: `enable_thinking`, `keep_alive`, `reasoning`, `reasoning_effort`, `think`, and `thinking`.
+- OpenAI returned: `Unrecognized request arguments supplied: enable_thinking, keep_alive, reasoning, reasoning_effort, think, thinking`.
+- Error type: `invalid_request_error`.
+
+Fix:
+- Replaced the OpenAI caption translation request body with a minimal Chat Completions payload: `model`, `messages`, and `temperature`.
+- Removed the OpenAI-specific fallback rotation over non-OpenAI payload shapes.
+- Changed the realtime translation prompt to use a natural-language target such as `Simplified Chinese`.
+- Added safe OpenAI error parsing so users see `OpenAI request failed: <safe message>` instead of only `HTTP Error - BadRequest`.
+- Added redaction helpers for provider error messages.
+
+Validation:
+
+| Test | Provider | Result | Notes |
+| --- | --- | --- | --- |
+| Short sentence | OpenAI-compatible | Pass | `As gentle as sunlight.` translated successfully; no 400 |
+| Normal sentence | OpenAI-compatible | Pass | Caption-style English sentence translated successfully |
+| Long sentence | OpenAI-compatible | Pass | 300+ character input translated successfully |
+| Empty input | Local validation | Pass | Blocked locally; no provider request |
+| Cancel | OpenAI-compatible | Pass | Request surfaced as cancelled |
+| Invalid model | OpenAI-compatible | Pass | Failed safely with `model_not_found`; settings unchanged |
+| Google regression | Google no-key endpoint | Pass | Basic Google translation path still responded successfully |
+| ClearBridge regression | OpenAI-compatible | Pass | Real API caption analysis still passed range, all, Arabic, 400, 401 block, no-action, ambiguous, and cancel checks |
+
+Security checks:
+- Key printed: No.
+- Authorization header printed: No.
+- Full request body printed: No.
+- Full provider response printed: No.
+- `setting.json` tracked: No.
+- Inherited upstream Google credential-like constant in `src/apis/TranslateAPI.cs`; no evidence of user secret exposure. Separate lightweight investigation recommended.
+
 ## Build Verification
 
 - `dotnet restore .\LiveCaptionsTranslator.sln`: passed.
