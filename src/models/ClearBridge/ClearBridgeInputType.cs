@@ -4,6 +4,7 @@ namespace LiveCaptionsTranslator.models.ClearBridge
     {
         Text,
         ScreenRegion,
-        ImageFile
+        ImageFile,
+        CaptionAnalysis
     }
 }

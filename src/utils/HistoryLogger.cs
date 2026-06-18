@@ -19,6 +19,7 @@ namespace LiveCaptionsTranslator.utils
         public const string FeatureTypeOcrTranslation = "OCR Translation";
         public const string FeatureTypeOcrSummary = "OCR Summary";
         public const string FeatureTypeClearBridgeOcr = "ClearBridge OCR";
+        public const string FeatureTypeClearBridgeCaptionAnalysis = "ClearBridge Caption Analysis";
         public const string FeatureTypeTranslation = "Translation";
 
         private static SqliteConnection _sharedConnection;
@@ -80,6 +81,13 @@ namespace LiveCaptionsTranslator.utils
             EnsureColumnExists("ClearBridgeHistory", "OcrEngine", "TEXT");
             EnsureColumnExists("ClearBridgeHistory", "OcrWasCloudBased", "INTEGER");
             EnsureColumnExists("ClearBridgeHistory", "OcrTextEdited", "INTEGER");
+            EnsureColumnExists("ClearBridgeHistory", "AnalysisScope", "TEXT");
+            EnsureColumnExists("ClearBridgeHistory", "RangeStart", "INTEGER");
+            EnsureColumnExists("ClearBridgeHistory", "RangeEnd", "INTEGER");
+            EnsureColumnExists("ClearBridgeHistory", "OriginalSentenceCount", "INTEGER");
+            EnsureColumnExists("ClearBridgeHistory", "ProcessedSentenceCount", "INTEGER");
+            EnsureColumnExists("ClearBridgeHistory", "SelectedCharacterCount", "INTEGER");
+            EnsureColumnExists("ClearBridgeHistory", "UserConfirmed", "INTEGER");
         }
 
         private static void NormalizeMissingTranslationFeatureTypes()
@@ -175,7 +183,14 @@ namespace LiveCaptionsTranslator.utils
             string ocrEngine = "",
             bool? ocrWasCloudBased = null,
             bool ocrTextEdited = false,
-            string featureType = FeatureTypeClearBridge)
+            string featureType = FeatureTypeClearBridge,
+            string analysisScope = "",
+            int? rangeStart = null,
+            int? rangeEnd = null,
+            int? originalSentenceCount = null,
+            int? processedSentenceCount = null,
+            int? selectedCharacterCount = null,
+            bool? userConfirmed = null)
         {
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
             var actionsJson = JsonSerializer.Serialize(outcome.Result.Actions);
@@ -186,10 +201,12 @@ namespace LiveCaptionsTranslator.utils
             string insertQuery = @"
                 INSERT INTO ClearBridgeHistory
                     (Timestamp, SourceText, Summary, Priority, ActionsJson, OutputLanguage, ProviderName, IsMock, FeatureType, ResultJson,
-                     InputType, OcrEngine, OcrWasCloudBased, OcrTextEdited)
+                     InputType, OcrEngine, OcrWasCloudBased, OcrTextEdited, AnalysisScope, RangeStart, RangeEnd,
+                     OriginalSentenceCount, ProcessedSentenceCount, SelectedCharacterCount, UserConfirmed)
                 VALUES
                     (@Timestamp, @SourceText, @Summary, @Priority, @ActionsJson, @OutputLanguage, @ProviderName, @IsMock, @FeatureType, @ResultJson,
-                     @InputType, @OcrEngine, @OcrWasCloudBased, @OcrTextEdited)";
+                     @InputType, @OcrEngine, @OcrWasCloudBased, @OcrTextEdited, @AnalysisScope, @RangeStart, @RangeEnd,
+                     @OriginalSentenceCount, @ProcessedSentenceCount, @SelectedCharacterCount, @UserConfirmed)";
 
             using (var command = new SqliteCommand(insertQuery, GetConnection()))
             {
@@ -209,6 +226,21 @@ namespace LiveCaptionsTranslator.utils
                     "@OcrWasCloudBased",
                     ocrWasCloudBased.HasValue ? (object)(ocrWasCloudBased.Value ? 1 : 0) : DBNull.Value);
                 command.Parameters.AddWithValue("@OcrTextEdited", ocrTextEdited ? 1 : 0);
+                command.Parameters.AddWithValue("@AnalysisScope", analysisScope);
+                command.Parameters.AddWithValue("@RangeStart", rangeStart.HasValue ? (object)rangeStart.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@RangeEnd", rangeEnd.HasValue ? (object)rangeEnd.Value : DBNull.Value);
+                command.Parameters.AddWithValue(
+                    "@OriginalSentenceCount",
+                    originalSentenceCount.HasValue ? (object)originalSentenceCount.Value : DBNull.Value);
+                command.Parameters.AddWithValue(
+                    "@ProcessedSentenceCount",
+                    processedSentenceCount.HasValue ? (object)processedSentenceCount.Value : DBNull.Value);
+                command.Parameters.AddWithValue(
+                    "@SelectedCharacterCount",
+                    selectedCharacterCount.HasValue ? (object)selectedCharacterCount.Value : DBNull.Value);
+                command.Parameters.AddWithValue(
+                    "@UserConfirmed",
+                    userConfirmed.HasValue ? (object)(userConfirmed.Value ? 1 : 0) : DBNull.Value);
                 await command.ExecuteNonQueryAsync(token);
             }
 

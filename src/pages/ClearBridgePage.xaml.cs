@@ -40,8 +40,11 @@ namespace LiveCaptionsTranslator
         private MouseWheelEventArgs? forwardedMouseWheelEvent;
         private bool applyingUiLanguage;
         private bool updatingOcrProviderSelection;
+        private bool updatingCaptionRange;
         private string currentStateKey = "Ready";
         private string currentStateDetail = string.Empty;
+        private IReadOnlyList<CaptionAnalysisSentence> captionAnalysisSentences = [];
+        private CaptionAnalysisRequest? currentCaptionRequest;
 
         public ClearBridgePage()
         {
@@ -69,6 +72,9 @@ namespace LiveCaptionsTranslator
 
             Unloaded += (s, e) =>
             {
+                analyzeCancellation?.Cancel();
+                ocrCancellation?.Cancel();
+                textActionCancellation?.Cancel();
                 if (ReferenceEquals(Instance, this))
                     Instance = null;
             };
@@ -102,6 +108,22 @@ namespace LiveCaptionsTranslator
             UpdateCharacterCount();
         }
 
+        private void CaptionScope_Checked(object sender, RoutedEventArgs e)
+        {
+            if (updatingCaptionRange)
+                return;
+
+            UpdateCaptionSelectionPreview();
+        }
+
+        private void CaptionRangeBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (updatingCaptionRange)
+                return;
+
+            UpdateCaptionSelectionPreview();
+        }
+
         private void RegisterMouseWheelForwardingHandlers()
         {
             UIElement[] wheelTargets =
@@ -124,6 +146,8 @@ namespace LiveCaptionsTranslator
                 OcrReviewPanel,
                 TranslationResultPanel,
                 SummaryResultPanel,
+                CaptionAnalysisCard,
+                CaptionPreviewText,
                 SourceTextBox
             ];
 
@@ -158,6 +182,7 @@ namespace LiveCaptionsTranslator
 
         private void TextModeButton_Click(object sender, RoutedEventArgs e)
         {
+            ClearCaptionAnalysisState();
             ClearOcrState(clearText: false);
             SetState("Ready");
         }
@@ -303,6 +328,7 @@ namespace LiveCaptionsTranslator
 
         private void ExampleButton_Click(object sender, RoutedEventArgs e)
         {
+            ClearCaptionAnalysisState();
             ClearOcrState(clearText: false);
             SourceTextBox.Text = MockCrisisActionAnalysisProvider.SampleNotice;
             ProviderBox.SelectedItem = "Mock";
@@ -338,6 +364,38 @@ namespace LiveCaptionsTranslator
                 currentOcrResult);
         }
 
+        private async void CaptionAnalyzeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (analyzeCancellation != null)
+            {
+                analyzeCancellation.Cancel();
+                return;
+            }
+
+            await AnalyzeCaptionSelectionAsync();
+        }
+
+        private void CaptionCancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (analyzeCancellation != null)
+            {
+                analyzeCancellation.Cancel();
+                return;
+            }
+
+            ClearCaptionAnalysisState();
+            currentInputType = ClearBridgeInputType.Text;
+            ApplyInputModeState();
+            HideResultPanels();
+            SetState("Ready");
+        }
+
+        private void CaptionResetRangeButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetCaptionRange();
+            UpdateCaptionSelectionPreview();
+        }
+
         private async void CopySummaryButton_Click(object sender, RoutedEventArgs e)
         {
             await CopyToClipboardAsync(BuildSummaryText(), "ClearBridge.Copy.Success");
@@ -364,7 +422,191 @@ namespace LiveCaptionsTranslator
 
         private async void AnalyzeAgainButton_Click(object sender, RoutedEventArgs e)
         {
-            await AnalyzeAsync(currentInputType, currentOcrResult);
+            if (currentInputType == ClearBridgeInputType.CaptionAnalysis)
+                await AnalyzeCaptionSelectionAsync();
+            else
+                await AnalyzeAsync(currentInputType, currentOcrResult);
+        }
+
+        public void LoadCaptionAnalysis(IReadOnlyList<CaptionAnalysisSentence> sentences)
+        {
+            captionAnalysisSentences = sentences
+                .OrderBy(sentence => sentence.Number)
+                .Select(sentence => new CaptionAnalysisSentence
+                {
+                    Number = sentence.Number,
+                    SourceText = sentence.SourceText,
+                    TranslatedText = sentence.TranslatedText,
+                    Timestamp = sentence.Timestamp
+                })
+                .ToList();
+
+            currentInputType = ClearBridgeInputType.CaptionAnalysis;
+            currentOcrImage = null;
+            currentOcrResult = null;
+            currentOutcome = null;
+            currentCaptionRequest = null;
+            historySaved = false;
+            SourceTextBox.Clear();
+            ResetCaptionRange();
+            ApplyInputModeState();
+            HideResultPanels();
+            ApplyHistoryButtonState();
+            UpdateCaptionSelectionPreview();
+
+            var detail = captionAnalysisSentences.Count == 0
+                ? localizer.T("ClearBridge.Error.NoCaptionsAvailable")
+                : localizer.T("ClearBridge.Caption.CaptionsMayContainRecognitionErrors");
+            SetState("Ready", detail);
+            PageScrollViewer.ScrollToTop();
+        }
+
+        private async Task AnalyzeCaptionSelectionAsync()
+        {
+            var outputLanguage = GetSelectedOutputLanguage();
+            var providerName = GetSelectedProvider();
+
+            analyzeCancellation = new CancellationTokenSource();
+            SetAnalyzingUi(true);
+            currentCaptionRequest = null;
+            currentOutcome = null;
+            historySaved = false;
+            HideResultPanels();
+            ApplyHistoryButtonState();
+            SetState("Analyzing", localizer.T("ClearBridge.Caption.ReviewBeforeSaving"));
+
+            try
+            {
+                var request = CreateCaptionAnalysisRequest();
+                var outcome = await analysisService.AnalyzeCaptionAsync(
+                    providerName,
+                    request.Text,
+                    outputLanguage,
+                    analyzeCancellation.Token);
+
+                currentCaptionRequest = request;
+                currentOutcome = outcome;
+                historySaved = false;
+                SourceTextBox.Text = request.Text;
+                RenderResult(outcome);
+
+                if (outcome.IsMock)
+                {
+                    SetState("MockMode", outcome.UsedFallback
+                        ? localizer.T("ClearBridge.Fallback.Detail")
+                        : localizer.T("ClearBridge.MockMode.Detail"));
+                }
+                else
+                {
+                    SetState("Completed", localizer.T("ClearBridge.Caption.ReviewBeforeSaving"));
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                SetState("Cancelled", localizer.T("ClearBridge.Error.Cancelled"));
+            }
+            catch (ClearBridgeAnalysisException ex)
+            {
+                SetState("Failed", LocalizeError(ex.ErrorCode));
+            }
+            catch (Exception)
+            {
+                SetState("Failed", localizer.T("ClearBridge.Error.Unexpected"));
+            }
+            finally
+            {
+                analyzeCancellation?.Dispose();
+                analyzeCancellation = null;
+                SetAnalyzingUi(false);
+                UpdateCaptionSelectionPreview();
+            }
+        }
+
+        private CaptionAnalysisRequest CreateCaptionAnalysisRequest()
+        {
+            var analyzeAll = CaptionAllRadio.IsChecked == true;
+            var from = ParseCaptionRangeValue(CaptionFromBox.Text, 1);
+            var to = ParseCaptionRangeValue(CaptionToBox.Text, captionAnalysisSentences.Count);
+            return CaptionAnalysisPreprocessor.Prepare(captionAnalysisSentences, analyzeAll, from, to);
+        }
+
+        private void ResetCaptionRange()
+        {
+            if (CaptionAllRadio == null)
+                return;
+
+            updatingCaptionRange = true;
+            try
+            {
+                CaptionAllRadio.IsChecked = true;
+                CaptionRangeRadio.IsChecked = false;
+                CaptionFromBox.Text = captionAnalysisSentences.Count == 0 ? "0" : "1";
+                CaptionToBox.Text = captionAnalysisSentences.Count.ToString();
+            }
+            finally
+            {
+                updatingCaptionRange = false;
+            }
+        }
+
+        private void UpdateCaptionSelectionPreview()
+        {
+            if (CaptionAnalyzeButton == null)
+                return;
+
+            var total = captionAnalysisSentences.Count;
+            var analyzeAll = CaptionAllRadio.IsChecked == true;
+            var from = analyzeAll ? 1 : ParseCaptionRangeValue(CaptionFromBox.Text, 1);
+            var to = analyzeAll ? total : ParseCaptionRangeValue(CaptionToBox.Text, total);
+            var selectedCount = total == 0 || from < 1 || to > total || from > to
+                ? 0
+                : to - from + 1;
+            var validRange = total > 0 && from >= 1 && to <= total && from <= to;
+            var rangeTooLarge = selectedCount > CaptionAnalysisPreprocessor.MaxSentences;
+
+            CaptionFromBox.IsEnabled = !analyzeAll && analyzeCancellation == null;
+            CaptionToBox.IsEnabled = !analyzeAll && analyzeCancellation == null;
+            CaptionTotalText.Text = localizer.Format("ClearBridge.Caption.TotalSentences", total);
+            CaptionSelectedRangeText.Text = selectedCount == 0
+                ? localizer.T("ClearBridge.Caption.InvalidRange")
+                : localizer.Format("ClearBridge.Caption.SelectedRange", from, to);
+            CaptionSelectedCountText.Text = localizer.Format("ClearBridge.Caption.SelectedSentences", selectedCount);
+            CaptionLimitText.Text = rangeTooLarge
+                ? localizer.T("ClearBridge.Error.RangeTooLarge")
+                : localizer.T("ClearBridge.Caption.Maximum400Sentences");
+            CaptionPreviewText.Text = BuildCaptionPreview(from, to, validRange);
+            CaptionAnalyzeButton.IsEnabled = analyzeCancellation != null ||
+                (validRange && !rangeTooLarge && selectedCount > 0);
+        }
+
+        private string BuildCaptionPreview(int from, int to, bool validRange)
+        {
+            if (captionAnalysisSentences.Count == 0)
+                return localizer.T("ClearBridge.Error.NoCaptionsAvailable");
+
+            if (!validRange)
+                return localizer.T("ClearBridge.Error.InvalidRange");
+
+            var selected = captionAnalysisSentences
+                .Where(sentence => sentence.Number >= from && sentence.Number <= to)
+                .ToList();
+            var preview = selected.Count <= 6
+                ? selected
+                : selected.Take(3).Concat(selected.TakeLast(3));
+            var lines = preview.Select(sentence => $"[{sentence.Number}] {sentence.SourceText}");
+            var suffix = selected.Count > 6
+                ? Environment.NewLine + "..."
+                : string.Empty;
+            var charCount = selected.Sum(sentence => sentence.SourceText.Length);
+            return string.Join(Environment.NewLine, lines) +
+                   suffix +
+                   Environment.NewLine +
+                   localizer.Format("ClearBridge.Caption.CharacterEstimate", charCount);
+        }
+
+        private static int ParseCaptionRangeValue(string text, int fallback)
+        {
+            return int.TryParse(text, out var value) ? value : fallback;
         }
 
         public Task LoadOcrReviewAsync(
@@ -373,6 +615,7 @@ namespace LiveCaptionsTranslator
             ClearBridgeInputType inputType,
             string? confirmedText = null)
         {
+            ClearCaptionAnalysisState();
             currentOcrImage = input;
             currentOcrResult = result;
             currentInputType = inputType;
@@ -434,6 +677,7 @@ namespace LiveCaptionsTranslator
             ClearBridgeInputType inputType,
             bool useAiOcr)
         {
+            ClearCaptionAnalysisState();
             currentOcrImage = input;
             currentInputType = inputType;
             OcrPreviewImage.Source = input.ToPreviewImage();
@@ -684,13 +928,24 @@ namespace LiveCaptionsTranslator
                     sourceText,
                     outcome,
                     outputLanguage,
-                    inputType: inputType,
+                    inputType: currentCaptionRequest == null
+                        ? inputType
+                        : ClearBridgeInputType.CaptionAnalysis,
                     ocrEngine: ocrResult?.EngineName ?? string.Empty,
                     ocrWasCloudBased: ocrResult?.IsCloudBased,
                     ocrTextEdited: ocrResult != null && IsOcrTextEdited(),
-                    featureType: ocrResult == null
-                        ? SQLiteHistoryLogger.FeatureTypeClearBridge
-                        : SQLiteHistoryLogger.FeatureTypeClearBridgeOcr);
+                    featureType: currentCaptionRequest != null
+                        ? SQLiteHistoryLogger.FeatureTypeClearBridgeCaptionAnalysis
+                        : ocrResult == null
+                            ? SQLiteHistoryLogger.FeatureTypeClearBridge
+                            : SQLiteHistoryLogger.FeatureTypeClearBridgeOcr,
+                    analysisScope: currentCaptionRequest?.AnalysisScope ?? string.Empty,
+                    rangeStart: currentCaptionRequest?.RangeStart,
+                    rangeEnd: currentCaptionRequest?.RangeEnd,
+                    originalSentenceCount: currentCaptionRequest?.OriginalSentenceCount,
+                    processedSentenceCount: currentCaptionRequest?.ProcessedSentenceCount,
+                    selectedCharacterCount: currentCaptionRequest?.CharacterCount,
+                    userConfirmed: currentCaptionRequest == null ? null : true);
 
                 historySaved = true;
                 ApplyHistoryButtonState();
@@ -833,16 +1088,23 @@ namespace LiveCaptionsTranslator
             if (TextInputCard == null)
                 return;
 
+            var isCaptionMode = currentInputType == ClearBridgeInputType.CaptionAnalysis;
             var hasOcrInput = currentOcrImage != null || currentOcrResult != null;
             var isTextMode = currentInputType == ClearBridgeInputType.Text && !hasOcrInput;
 
-            TextInputCard.Visibility = isTextMode || hasOcrInput
+            CaptionAnalysisCard.Visibility = isCaptionMode
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            OcrToolsCard.Visibility = isCaptionMode
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            TextInputCard.Visibility = !isCaptionMode && (isTextMode || hasOcrInput)
                 ? Visibility.Visible
                 : Visibility.Collapsed;
             TextInputActionsPanel.Visibility = isTextMode
                 ? Visibility.Visible
                 : Visibility.Collapsed;
-            OcrReviewPanel.Visibility = hasOcrInput
+            OcrReviewPanel.Visibility = !isCaptionMode && hasOcrInput
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
@@ -852,6 +1114,8 @@ namespace LiveCaptionsTranslator
             SourceTextBox.ToolTip = isTextMode
                 ? localizer.T("ClearBridge.Input.Placeholder")
                 : localizer.T("ClearBridge.Ocr.ReviewWarning");
+
+            UpdateCaptionSelectionPreview();
         }
 
         private void ClearOcrState(bool clearText)
@@ -869,6 +1133,14 @@ namespace LiveCaptionsTranslator
                 SourceTextBox.Clear();
         }
 
+        private void ClearCaptionAnalysisState()
+        {
+            captionAnalysisSentences = [];
+            currentCaptionRequest = null;
+            if (currentInputType == ClearBridgeInputType.CaptionAnalysis)
+                currentInputType = ClearBridgeInputType.Text;
+        }
+
         private void RenderResult(CrisisActionAnalysisOutcome outcome)
         {
             var result = outcome.Result;
@@ -883,12 +1155,9 @@ namespace LiveCaptionsTranslator
             ImportantPointsList.ItemsSource = BuildStringRows(result.ImportantPoints);
             WarningsList.ItemsSource = BuildStringRows(result.Warnings);
             UnclearItemsList.ItemsSource = BuildStringRows(result.UnclearItems);
-            ActionsList.ItemsSource = result.Actions.Count > 0
-                ? result.Actions.Select(action => new ActionItemViewModel(action, localizer)).ToList()
-                : new List<ActionItemViewModel>
-                {
-                    new(new ActionItem { Task = localizer.T("ClearBridge.EmptyList") }, localizer)
-                };
+            ActionsList.ItemsSource = result.Actions
+                .Select(action => new ActionItemViewModel(action, localizer))
+                .ToList();
             EvidenceList.ItemsSource = result.SourceEvidence.Count > 0
                 ? result.SourceEvidence
                 : new List<SourceEvidenceItem>
@@ -972,6 +1241,9 @@ namespace LiveCaptionsTranslator
             OcrEngineBox.FlowDirection = System.Windows.FlowDirection.LeftToRight;
             OcrTranslationProviderBox.FlowDirection = System.Windows.FlowDirection.LeftToRight;
             OcrTargetLanguageBox.FlowDirection = System.Windows.FlowDirection.LeftToRight;
+            CaptionFromBox.FlowDirection = System.Windows.FlowDirection.LeftToRight;
+            CaptionToBox.FlowDirection = System.Windows.FlowDirection.LeftToRight;
+            CaptionPreviewText.FlowDirection = System.Windows.FlowDirection.LeftToRight;
             UiLanguageBox.SelectedValue = AppLocalizationService.SavedLanguage;
             applyingUiLanguage = false;
 
@@ -998,6 +1270,17 @@ namespace LiveCaptionsTranslator
             RetryAiOcrButton.Content = localizer.T("ClearBridge.Ocr.RetryAiOcr");
             ClearOcrButton.Content = localizer.T("ClearBridge.Ocr.Clear");
             CancelOcrButton.Content = localizer.T("ClearBridge.Cancel");
+            CaptionAnalysisHeaderText.Text = localizer.T("ClearBridge.Caption.AnalyzeCaptions");
+            CaptionRecognitionWarningText.Text = localizer.T("ClearBridge.Caption.CaptionsMayContainRecognitionErrors");
+            CaptionScopeLabel.Text = localizer.T("ClearBridge.Caption.AnalysisScope");
+            CaptionAllRadio.Content = localizer.T("ClearBridge.Caption.AllCaptions");
+            CaptionRangeRadio.Content = localizer.T("ClearBridge.Caption.SentenceRange");
+            CaptionFromLabel.Text = localizer.T("ClearBridge.Caption.FromSentence");
+            CaptionToLabel.Text = localizer.T("ClearBridge.Caption.ToSentence");
+            CaptionPreviewHeaderText.Text = localizer.T("ClearBridge.Caption.PreviewSelection");
+            CaptionAnalyzeButton.Content = localizer.T("ClearBridge.Caption.AnalyzeSelectedRange");
+            CaptionCancelButton.Content = localizer.T("ClearBridge.Cancel");
+            CaptionResetRangeButton.Content = localizer.T("ClearBridge.Caption.ResetRange");
             ExampleButton.Content = localizer.T("ClearBridge.Example");
             ClearButton.Content = localizer.T("ClearBridge.Clear");
             AnalyzeButton.Content = analyzeCancellation == null
@@ -1016,6 +1299,7 @@ namespace LiveCaptionsTranslator
             ApplyInputModeState();
             UpdateOcrMetadata();
             UpdateCharacterCount();
+            UpdateCaptionSelectionPreview();
         }
 
         private void SetBusyUi(bool isBusy)
@@ -1045,6 +1329,13 @@ namespace LiveCaptionsTranslator
             RetryAiOcrButton.IsEnabled = !isAnalyzing && currentOcrImage != null;
             ClearOcrButton.IsEnabled = !isAnalyzing && currentOcrImage != null;
             CancelOcrButton.IsEnabled = isAnalyzing || currentOcrImage != null;
+            CaptionAllRadio.IsEnabled = !isAnalyzing;
+            CaptionRangeRadio.IsEnabled = !isAnalyzing;
+            CaptionResetRangeButton.IsEnabled = !isAnalyzing;
+            CaptionCancelButton.IsEnabled = true;
+            CaptionAnalyzeButton.Content = isAnalyzing
+                ? localizer.T("ClearBridge.Cancel")
+                : localizer.T("ClearBridge.Caption.AnalyzeSelectedRange");
             ExampleButton.IsEnabled = !isAnalyzing;
             ClearButton.IsEnabled = !isAnalyzing;
             CopySummaryButton.IsEnabled = !isAnalyzing;
@@ -1052,6 +1343,7 @@ namespace LiveCaptionsTranslator
             SaveHistoryButton.IsEnabled = !isAnalyzing && currentOutcome != null && !historySaved;
             AnalyzeAgainButton.IsEnabled = !isAnalyzing;
             ApplyHistoryButtonState();
+            UpdateCaptionSelectionPreview();
         }
 
         private void ApplyHistoryButtonState()
@@ -1063,7 +1355,9 @@ namespace LiveCaptionsTranslator
                 ? localizer.T("ClearBridge.SavedToHistory")
                 : localizer.T("ClearBridge.SaveToHistory");
             SaveHistoryButton.ToolTip = historySaved
-                ? localizer.T("ClearBridge.SavedToHistory.Detail")
+                ? localizer.T(currentCaptionRequest == null
+                    ? "ClearBridge.SavedToHistory.Detail"
+                    : "ClearBridge.Caption.SavedToHistory.Detail")
                 : localizer.T("ClearBridge.SaveToHistory.Detail");
 
             if (currentOutcome == null || historySaved)

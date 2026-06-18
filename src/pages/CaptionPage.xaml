@@ -12,6 +12,7 @@
 
     <Grid x:Name="CaptionRoot" Margin="5,5,15,5">
         <Grid.RowDefinitions>
+            <RowDefinition x:Name="CaptionAnalysisEntry_Row" Height="Auto" />
             <RowDefinition x:Name="OriginalCaption_Row" Height="Auto" />
             <RowDefinition x:Name="TranslatedCaption_Row" Height="Auto" />
             <RowDefinition x:Name="CaptionLogCard_Row" Height="Auto" />
@@ -23,8 +24,16 @@
             </Style>
         </Grid.Resources>
 
-        <ui:Card
+        <Button
+            x:Name="AnalyzeCaptionsButton"
             Grid.Row="0"
+            MinWidth="230"
+            Margin="0,0,0,6"
+            HorizontalAlignment="Left"
+            Click="AnalyzeCaptionsButton_Click" />
+
+        <ui:Card
+            Grid.Row="1"
             Padding="8"
             VerticalAlignment="Stretch">
             <TextBlock
@@ -39,7 +48,7 @@
         </ui:Card>
 
         <ui:Card
-            Grid.Row="1"
+            Grid.Row="2"
             MinHeight="43"
             Margin="0,3,0,0"
             Padding="8"
@@ -57,7 +66,7 @@
 
         <ui:Card
             x:Name="LogCards"
-            Grid.Row="2"
+            Grid.Row="3"
             Margin="0,0,0,5"
             Padding="8"
             VerticalAlignment="Top"

@@ -286,8 +286,20 @@ namespace LiveCaptionsTranslator
             try
             {
                 if (isOverwrite)
+                    Caption?.RemoveLastAnalysisSentence();
+                if (isOverwrite)
                     await SQLiteHistoryLogger.DeleteLastTranslation(token);
                 await SQLiteHistoryLogger.LogTranslation(originalText, translatedText, targetLanguage, apiName);
+                Caption?.AppendAnalysisSentence(new TranslationHistoryEntry
+                {
+                    Timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                    TimestampFull = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    SourceText = originalText,
+                    TranslatedText = translatedText,
+                    TargetLanguage = targetLanguage,
+                    ApiUsed = apiName,
+                    FeatureType = SQLiteHistoryLogger.FeatureTypeLiveCaptions
+                });
                 TranslationLogged?.Invoke();
             }
             catch (OperationCanceledException)
@@ -306,8 +318,20 @@ namespace LiveCaptionsTranslator
             try
             {
                 if (isOverwrite)
+                    Caption?.RemoveLastAnalysisSentence();
+                if (isOverwrite)
                     await SQLiteHistoryLogger.DeleteLastTranslation(token);
                 await SQLiteHistoryLogger.LogTranslation(originalText, "N/A", "N/A", "LogOnly");
+                Caption?.AppendAnalysisSentence(new TranslationHistoryEntry
+                {
+                    Timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                    TimestampFull = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    SourceText = originalText,
+                    TranslatedText = "N/A",
+                    TargetLanguage = "N/A",
+                    ApiUsed = "LogOnly",
+                    FeatureType = SQLiteHistoryLogger.FeatureTypeLiveCaptions
+                });
                 TranslationLogged?.Invoke();
             }
             catch (OperationCanceledException)
