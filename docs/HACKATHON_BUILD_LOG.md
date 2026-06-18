@@ -813,3 +813,66 @@ Allow users to manually choose all real-time captions or a sentence range, then 
 - Branch: `feature/clearbridge-phase4-caption-analysis`
 - Commit hash: `c1b865e`
 - Commit message: `feat(captions): add manual ClearBridge caption range analysis`
+
+## 2026-06-18 - Phase 4 / No-API Audit and Mock Validation
+
+### Goal
+Audit Phase 4 caption analysis without a real AI API key, validate Mock and boundary behavior, and prepare a checklist for evening real-provider testing.
+
+### Work Completed
+- Performed static audit of caption snapshot, inclusive range selection, 400-sentence limit, conservative deduplication, concurrency, cancellation, and History metadata.
+- Added a shared ClearBridge input limit class so caption analysis can preserve the 400-sentence requirement without being blocked by the Phase 1 text-input character limit.
+- Tightened caption preprocessing so clear consecutive incremental subtitles keep the most complete caption while still avoiding aggressive semantic deletion.
+- Updated Caption Mock analysis to derive actions and source evidence from the selected captions instead of returning an unrelated fixed sample.
+- Changed caption provider fallback to run Mock analysis on the selected caption text.
+- Added a no-network Phase 4 audit harness.
+- Added a manual API test checklist for real provider testing.
+
+### Files Changed
+- `LiveCaptionsTranslator.csproj`
+- `src/services/ClearBridge/ClearBridgeInputLimits.cs`
+- `src/services/ClearBridge/CaptionAnalysisPreprocessor.cs`
+- `src/services/ClearBridge/CrisisActionAnalysisService.cs`
+- `src/services/ClearBridge/MockCaptionCrisisActionAnalysisProvider.cs`
+- `tools/Phase4CaptionAudit/Phase4CaptionAudit.csproj`
+- `tools/Phase4CaptionAudit/Program.cs`
+- `docs/PHASE4_CAPTION_ANALYSIS_TEST_REPORT.md`
+- `docs/PHASE4_MANUAL_API_TEST_CHECKLIST.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+
+### Technical Decisions
+- Kept validation offline because this environment has no real provider key and the task prohibits fake keys or paid external calls.
+- Used a lightweight harness instead of a full test project to avoid broad test infrastructure changes during Phase 4.
+- Kept deduplication deliberately conservative: only exact consecutive duplicates and clearly incremental consecutive captions are collapsed.
+- Kept History database writes out of the harness to avoid creating user data during audit.
+
+### AI Tools Used
+- Codex: static audit, minimal fixes, harness creation, documentation updates, and build/test execution.
+- ChatGPT: no new separate usage recorded in this pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- Mock Provider: used for local no-key validation.
+- OpenAI-compatible API: not called in this audit; real-provider validation remains pending.
+- SQLite via Microsoft.Data.Sqlite: code path reviewed, but the harness did not write user History.
+- Existing LiveCaptions Translator caption buffer: audited as the source of selected caption snapshots.
+
+### Tests Performed
+- `dotnet run --project .\tools\Phase4CaptionAudit\Phase4CaptionAudit.csproj -c Release`: passed 9 checks.
+- Harness covered inclusive ranges, 1-sentence ranges, 400/401 boundaries, snapshot immutability, conservative duplicate/incremental caption handling, Mock output in English/Simplified Chinese/Arabic, no-action content, ambiguous content, invalid JSON, missing JSON fields, illegal priority fallback, null lists, and cancellation.
+- Sensitive-pattern scan found an existing tracked Google API key-like string in `src/apis/TranslateAPI.cs`; it was present in `HEAD` before this audit and was not introduced by Phase 4.
+- Real API validation was not performed because no API key is available in this environment.
+- Physical desktop validation for Arabic UI, special DPI, and multi-monitor behavior remains pending for this audit pass.
+
+### Known Limitations
+- Mock validation is not real model validation.
+- Real provider timeout/network recovery still needs evening configured-provider testing.
+- Existing tracked Google API key-like string in `src/apis/TranslateAPI.cs` should be reviewed/remediated separately before final public submission.
+- The existing Phase 1 mouse wheel issue over some generated result areas remains a known issue.
+- Phase 5 automatic rolling summary is intentionally not started.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase4-caption-analysis`
+- Commit hash: this audit commit
+- Commit message: pending

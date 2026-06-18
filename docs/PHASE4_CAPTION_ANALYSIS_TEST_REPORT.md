@@ -26,9 +26,9 @@ Guardrails:
 | Analyze All | Build pass | Allows all captions when selected count is 400 or fewer. |
 | Sentence Range | Build pass | Supports From/To sentence range with validation. |
 | 400 sentence limit | Build pass | Ranges above 400 disable/block analysis and show a localized error. |
-| Conservative deduplication | Build pass | Removes only consecutive exact duplicate captions after whitespace normalization. |
+| Conservative deduplication | Harness pass | Removes consecutive exact duplicates and only replaces clearly incremental consecutive captions with the more complete caption. |
 | Caption prompt | Build pass | OpenAI-compatible provider uses a caption-specific prompt covering recognition errors, repeats, source evidence, and no fabricated tasks. |
-| Mock caption analysis | Build pass | Mock Caption provider returns fixed, clearly marked Mock Mode structured output. |
+| Mock caption analysis | Harness pass | Mock Caption provider is deterministic, clearly marked Mock Mode, and now derives actions/evidence from the selected input instead of a fixed unrelated sample. |
 | Manual save | Build pass | Caption analysis results are displayed first; Save to History is user-triggered. |
 | History feature type | Build pass | Saves `FeatureType = ClearBridge Caption Analysis` with range metadata. |
 | Localization | Build pass | English, Simplified Chinese, and Arabic strings added for caption range controls and errors. |
@@ -51,6 +51,42 @@ Guardrails:
 | P4-09 / Cancel | Mock / OpenAI-compatible | English | Build pass, pending manual UI QA | Cancel should stop current request and not save History. |
 | P4-10 / concurrent clicks | Mock | English | Build pass, pending manual UI QA | Repeated Analyze clicks should not create duplicate History rows. |
 | P4-11 / Arabic UI | Mock | Arabic | Build pass, pending manual UI QA | Arabic UI should remain usable; range inputs and caption text remain readable. |
+
+## Independent No-API Audit - 2026-06-18
+
+Validation mode:
+- No real AI API key was used.
+- No external paid provider was called.
+- Mock results are treated only as Mock validation, not real model quality validation.
+- Physical desktop validation and real API validation remain separate.
+
+Code-level validation:
+- Snapshot: `LoadCaptionAnalysis` copies caption items, and `CaptionAnalysisPreprocessor.Prepare` builds a request object before provider execution.
+- Range: `From` and `To` are inclusive; range 80-140 represents 61 captions.
+- Limit: 400 captions are allowed; 401 captions are blocked with `RangeTooLarge`.
+- Deduplication: consecutive exact duplicates are removed; clear incremental updates such as `The worksheet...` to `The worksheet is due Friday.` keep the final complete caption.
+- Concurrency: one `CancellationTokenSource` drives the active request; controls are disabled while analyzing and restored in `finally`.
+- History: manual Save writes `FeatureType = ClearBridge Caption Analysis` and range metadata; provider errors and cancellation do not automatically save History.
+
+Harness validation:
+- Added `tools/Phase4CaptionAudit`.
+- `dotnet run --project .\tools\Phase4CaptionAudit\Phase4CaptionAudit.csproj -c Release`: passed 9 checks.
+- Covered inclusive ranges, 1-sentence ranges, 400/401 boundaries, snapshot immutability, deduplication, Mock output in English/Chinese/Arabic, no-action content, ambiguous content, parser fallback behavior, and cancellation.
+
+Error and provider tolerance:
+- Empty response: rejected as `EmptyResponse`.
+- Non-JSON response: rejected as `InvalidJson`.
+- Truncated JSON: rejected as `InvalidJson`.
+- Missing fields: normalized to safe defaults.
+- Illegal priority: falls back to `medium`.
+- Null actions/evidence: normalized to empty lists.
+- Operation cancellation: surfaced without producing a result.
+- Real provider timeout/network behavior: code-level path reviewed; real API validation is pending because this environment has no API key.
+
+Regression review:
+- Caption source buffer remains independent from database IDs and uses current-session numbering.
+- OCR, Alt+V quick card, Settings, and existing History feature types were not modified by this audit except for shared build/project exclusion for the test harness.
+- Arabic physical UI validation is still pending for this audit run.
 
 ## History Verification
 
@@ -75,6 +111,7 @@ The compatibility History row should also use:
 - Source evidence prompt requires exact selected-caption wording.
 - No reminders, calendar entries, emails, or automatic decisions are created.
 - No API key, Authorization header, hidden system prompt, image, or Base64 is saved to History.
+- Repository sensitive-pattern scan found an existing tracked Google API key-like string in `src/apis/TranslateAPI.cs`; it was present in `HEAD` before this audit and was not introduced by Phase 4. Treat this as a separate remediation risk before final public submission.
 
 ## Build Verification
 
@@ -91,7 +128,10 @@ The compatibility History row should also use:
 
 - Phase 4 uses current-session caption analysis history; it does not yet provide a full persisted caption-session browser.
 - Deduplication is intentionally conservative and only removes consecutive exact duplicates after whitespace normalization.
+- The 2026-06-18 audit expanded deduplication only for clear consecutive incremental captions; it still avoids aggressive semantic deletion.
 - No automatic rolling summary is implemented.
 - Configured-provider semantic quality requires manual QA with real caption transcripts.
+- Real API validation is pending; use `docs/PHASE4_MANUAL_API_TEST_CHECKLIST.md`.
+- Existing tracked Google API key-like string in `src/apis/TranslateAPI.cs` requires separate review/remediation before final public submission.
 - Arabic UI and special DPI/display configurations still require physical manual verification.
 - The existing Phase 1 mouse wheel issue over some generated result areas remains a known issue.
