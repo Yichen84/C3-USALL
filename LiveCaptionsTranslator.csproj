@@ -62,4 +62,8 @@
 	  </Compile>
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Compile Remove="tools\**\*.cs" />
+	</ItemGroup>
+
 </Project>

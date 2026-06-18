@@ -4,7 +4,7 @@ namespace LiveCaptionsTranslator.services.ClearBridge
 {
     public static class CaptionAnalysisPreprocessor
     {
-        public const int MaxSentences = 400;
+        public const int MaxSentences = ClearBridgeInputLimits.MaxCaptionSentences;
 
         public static CaptionAnalysisRequest Prepare(
             IReadOnlyList<CaptionAnalysisSentence> sentences,
@@ -37,7 +37,7 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 Environment.NewLine,
                 processed.Select(sentence => $"[{sentence.Number}] {sentence.SourceText.Trim()}"));
 
-            if (text.Trim().Length < CrisisActionAnalysisService.MinInputLength)
+            if (text.Trim().Length < ClearBridgeInputLimits.MinInputLength)
                 throw new ClearBridgeAnalysisException("InputTooShort", "The selected captions are too short.");
 
             return new CaptionAnalysisRequest
@@ -59,6 +59,7 @@ namespace LiveCaptionsTranslator.services.ClearBridge
         {
             var processed = new List<CaptionAnalysisSentence>();
             string? previousNormalized = null;
+            string? previousIncrementalNormalized = null;
 
             foreach (var sentence in selected)
             {
@@ -70,6 +71,23 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 if (string.Equals(normalized, previousNormalized, StringComparison.Ordinal))
                     continue;
 
+                var incrementalNormalized = NormalizeForIncrementalCheck(text);
+                if (processed.Count > 0 &&
+                    previousIncrementalNormalized != null &&
+                    IsConservativeIncrementalReplacement(previousIncrementalNormalized, incrementalNormalized))
+                {
+                    processed[^1] = new CaptionAnalysisSentence
+                    {
+                        Number = sentence.Number,
+                        SourceText = text,
+                        TranslatedText = sentence.TranslatedText,
+                        Timestamp = sentence.Timestamp
+                    };
+                    previousNormalized = normalized;
+                    previousIncrementalNormalized = incrementalNormalized;
+                    continue;
+                }
+
                 processed.Add(new CaptionAnalysisSentence
                 {
                     Number = sentence.Number,
@@ -78,6 +96,7 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                     Timestamp = sentence.Timestamp
                 });
                 previousNormalized = normalized;
+                previousIncrementalNormalized = incrementalNormalized;
             }
 
             return processed;
@@ -90,6 +109,26 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 text.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                 .Trim()
                 .ToLowerInvariant();
+        }
+
+        private static string NormalizeForIncrementalCheck(string text)
+        {
+            var normalized = NormalizeForExactDuplicateCheck(text)
+                .TrimEnd('.', ',', ';', ':', '!', '?', '-', '…');
+
+            while (normalized.EndsWith("...", StringComparison.Ordinal))
+                normalized = normalized[..^3].TrimEnd();
+
+            return normalized.Trim();
+        }
+
+        private static bool IsConservativeIncrementalReplacement(string previous, string current)
+        {
+            if (previous.Length < 8 || current.Length <= previous.Length + 2)
+                return false;
+
+            return current.StartsWith(previous + " ", StringComparison.Ordinal) ||
+                   current.StartsWith(previous, StringComparison.Ordinal);
         }
     }
 }

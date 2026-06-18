@@ -6,8 +6,9 @@ namespace LiveCaptionsTranslator.services.ClearBridge
 {
     public sealed class CrisisActionAnalysisService
     {
-        public const int MinInputLength = 30;
-        public const int MaxInputLength = 12000;
+        public const int MinInputLength = ClearBridgeInputLimits.MinInputLength;
+        public const int MaxInputLength = ClearBridgeInputLimits.MaxInputLength;
+        public const int MaxCaptionInputLength = ClearBridgeInputLimits.MaxCaptionInputLength;
 
         private readonly MockCrisisActionAnalysisProvider mockProvider = new();
         private readonly MockCaptionCrisisActionAnalysisProvider mockCaptionProvider = new();
@@ -64,7 +65,7 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             string outputLanguage,
             CancellationToken cancellationToken)
         {
-            ValidateInput(sourceText, outputLanguage);
+            ValidateCaptionInput(sourceText, outputLanguage);
 
             var provider = GetCaptionProvider(providerName);
             try
@@ -86,7 +87,7 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                     $"InputLength={sourceText.Length} ErrorType={ex.ErrorCode}");
 
                 var result = await mockCaptionProvider.AnalyzeAsync(
-                    MockCaptionCrisisActionAnalysisProvider.SampleTranscript,
+                    sourceText,
                     outputLanguage,
                     cancellationToken);
 
@@ -131,6 +132,26 @@ namespace LiveCaptionsTranslator.services.ClearBridge
 
             if (sourceText.Length > MaxInputLength)
                 throw new ClearBridgeAnalysisException("InputTooLong", $"The text is too long. Keep it under {MaxInputLength} characters.");
+
+            if (string.IsNullOrWhiteSpace(outputLanguage) ||
+                !ClearBridgeOutputLanguages.Supported.Contains(outputLanguage))
+            {
+                throw new ClearBridgeAnalysisException("OutputLanguageMissing", "Choose an output language.");
+            }
+        }
+
+        private static void ValidateCaptionInput(string sourceText, string outputLanguage)
+        {
+            if (string.IsNullOrWhiteSpace(sourceText))
+                throw new ClearBridgeAnalysisException("InputEmpty", "Choose captions before analyzing.");
+
+            if (sourceText.Trim().Length < MinInputLength)
+                throw new ClearBridgeAnalysisException("InputTooShort", $"Select at least {MinInputLength} characters.");
+
+            if (sourceText.Length > MaxCaptionInputLength)
+                throw new ClearBridgeAnalysisException(
+                    "InputTooLong",
+                    $"The selected captions are too long. Keep them under {MaxCaptionInputLength} characters.");
 
             if (string.IsNullOrWhiteSpace(outputLanguage) ||
                 !ClearBridgeOutputLanguages.Supported.Contains(outputLanguage))
