@@ -73,25 +73,42 @@ OCR completion must stop at editable text review. It must not automatically call
 
 | Case | Provider | Language | Result | Main Issue |
 | --- | --- | --- | --- | --- |
-| P3-Screen-EN-01 | Local OCR | English UI | Pending manual | Verify school weather notice OCR keeps `12:30 PM` and bus uncertainty. |
-| P3-Screen-ZH-01 | Local OCR | Chinese UI | Pending manual | Verify Chinese notice OCR and review/edit flow. |
-| P3-Screen-AR-01 | Local OCR | Arabic UI / RTL | Pending manual | Verify Arabic text extraction and UI layout. |
-| P3-Image-PNG-01 | Local OCR | English output | Pending manual | Verify PNG upload and editable review text. |
-| P3-Image-JPG-01 | Local OCR | Simplified Chinese output | Pending manual | Verify JPG upload and translation action. |
-| P3-Image-BMP-01 | Local OCR | Arabic output | Pending manual | Verify BMP upload and ClearBridge action. |
-| P3-AI-01 | AI OCR | English UI | Pending configured-provider QA | Verify cloud confirmation appears before upload. |
-| P3-AI-02 | AI OCR | Chinese UI | Pending configured-provider QA | Verify canceling upload makes no API request. |
-| P3-Action-A | Translation Provider | Chinese target | Pending manual | Translation result must not show Priority or Checklist. |
-| P3-Action-B | OpenAI-compatible Summary | English output | Pending configured-provider QA | Summary result must not show structured action fields. |
-| P3-Action-C | ClearBridge Provider | English / Chinese / Arabic | Pending manual | ClearBridge result must show action fields and source evidence. |
-| P3-Cancel | None | English UI | Pending manual | Cancel must not trigger provider calls. |
-| P3-Retry | Local / AI OCR | English UI | Pending manual | Retry must not repeat old post-processing requests. |
-| P3-Hotkey-01 | Local OCR | English UI | Pending manual | Press `Alt + V` from another app; verify one-time region capture opens and shows the OCR quick action card near the selection. |
-| P3-Hotkey-02 | None | Settings | Pending manual | Change hotkey, restart, verify persisted setting and conflict message for an occupied shortcut. |
-| P3-Mode-01 | None | English / Chinese / Arabic UI | Pending manual | Verify text mode and OCR modes do not show duplicate Notice Text/OCR Review controls. |
-| P3-QuickCard-01 | Local OCR | English UI | Pending manual | Verify the card appears near the selected area, can be dragged, closes on Esc, and does not leave the screen. |
-| P3-QuickCard-02 | Local OCR | English UI | Pending manual | Verify Translate, Summarize, ClearBridge Analyze, Open Full Review, Retry OCR, and Close from the card. |
-| P3-QuickCard-03 | Local OCR | Arabic UI / RTL | Pending manual | Verify RTL layout remains usable and provider names/numbers remain readable. |
+| P3-Screen-EN-01 | Local OCR | English UI | Pass | One-time screen region capture and OCR review worked in manual validation. |
+| P3-Screen-ZH-01 | Local OCR | Chinese UI | Pass | OCR review remains editable and post-OCR actions remain user-triggered. |
+| P3-Screen-AR-01 | Local OCR | Arabic UI / RTL | Pass | Arabic UI path remained usable in manual validation. |
+| P3-Image-PNG-01 | Local OCR | English output | Pass | Image upload entry and editable OCR Review worked in manual validation. |
+| P3-Image-JPG-01 | Local OCR | Simplified Chinese output | Pass | Uploaded-image OCR text could be used for Translation. |
+| P3-Image-BMP-01 | Local OCR | Arabic output | Pass | Uploaded-image OCR text could be used for ClearBridge analysis. |
+| P3-AI-01 | AI OCR | English UI | Pass | Cloud upload confirmation is shown before AI OCR upload. |
+| P3-AI-02 | AI OCR | Chinese UI | Pass | Canceling the confirmation does not proceed with cloud upload. |
+| P3-Action-A | Translation Provider | Chinese target | Pass | Translation result remains separate from Priority and Checklist fields. |
+| P3-Action-B | OpenAI-compatible Summary | English output | Pass | Plain summary result remains separate from structured ClearBridge fields. |
+| P3-Action-C | ClearBridge Provider | English / Chinese / Arabic | Pass | ClearBridge OCR path shows structured action-analysis output. |
+| P3-Cancel | None | English UI | Pass | Cancel does not trigger post-OCR provider calls. |
+| P3-Retry | Local / AI OCR | English UI | Pass | Retry OCR does not repeat stale post-processing requests. |
+| P3-Hotkey-01 | Local OCR | English UI | Pass | `Alt + V` triggers one-time region capture and quick action card. |
+| P3-Hotkey-02 | None | Settings | Pass | Hotkey setting remains editable, persists, and reports invalid/conflicting shortcuts. |
+| P3-Mode-01 | None | English / Chinese / Arabic UI | Pass | Text and OCR modes remain separated without duplicate Notice Text/OCR Review controls. |
+| P3-QuickCard-01 | Local OCR | English UI | Pass | Dark translucent quick card appears after OCR and can be used without opening the full page. |
+| P3-QuickCard-02 | Local OCR | English UI | Pass | Translate, Summarize, ClearBridge Analyze, Open Full Review, Retry OCR, and Close are available from the card. |
+| P3-QuickCard-03 | Local OCR | Arabic UI / RTL | Pass | Arabic UI path remains usable; provider names and numbers remain readable. |
+
+## Manual Validation Closeout - 2026-06-18
+
+| Area | Result | Notes |
+| --- | --- | --- |
+| Phase 3 OCR manual validation | Pass | Manual OCR validation passed for the intended Phase 3 scope. |
+| One-time screen OCR | Pass | `Alt + V` one-time region selection, Local OCR, and quick action card were validated. |
+| Image upload | Pass | Image file input opens the OCR Review flow. |
+| OCR Review editing | Pass | OCR text can be reviewed and edited before downstream actions. |
+| No automatic provider call | Pass | OCR completion does not automatically translate, summarize, or analyze. |
+| Translate exit | Pass | Uses confirmed OCR text and writes `OCR Translation` history. |
+| Summarize exit | Pass | Uses confirmed OCR text and writes `OCR Summary` history. |
+| ClearBridge exit | Pass | Uses confirmed OCR text and writes `ClearBridge OCR` history. |
+| Quick action card | Pass | Dark translucent card is available after `Alt + V` capture. |
+| AI OCR confirmation | Pass | Cloud upload requires explicit user confirmation before AI OCR. |
+| Image/Base64 persistence | Pass by implementation and validation | Raw images and Base64 are not saved to History. |
+| Display matrix coverage | Not fully physically validated | Not fully physically validated on all display configurations. |
 
 ## Build Verification
 
@@ -107,8 +124,8 @@ OCR completion must stop at editable text review. It must not automatically call
 
 ## Known Limitations
 
-- Screen capture and quick card placement require manual QA on 100%, 125%, 150%, secondary monitor, and negative-coordinate monitor layouts.
-- `Alt + V` global hotkey behavior requires physical desktop QA, especially while browser, PDF reader, or chat software has focus.
+- Screen capture and quick card placement are not fully physically validated on all display configurations.
+- `Alt + V` global hotkey behavior passed intended manual validation, but uncommon app focus or OS shortcut conflicts may still require local confirmation.
 - Windows Local OCR accuracy depends on installed Windows OCR language capabilities and image quality.
 - Arabic OCR accuracy may be lower than English.
 - AI OCR requires a configured OpenAI-compatible model that supports vision input.

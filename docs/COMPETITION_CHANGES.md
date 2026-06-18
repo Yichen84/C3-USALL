@@ -328,3 +328,26 @@ This document separates upstream functionality from hackathon work. Do not claim
   - The card is a lightweight convenience layer, not a replacement for the full OCR Review page.
   - Translate and Summarize can run from current OCR text; ClearBridge action analysis prompts for Full Review when the OCR text appears too short or unclear.
   - The quick card preserves separate History feature types: `OCR Translation`, `OCR Summary`, and `ClearBridge OCR`.
+
+### Phase 3 Manual Validation and Milestone Closeout
+
+- Start date: 2026-06-18
+- Completion date: 2026-06-18
+- Corresponding commits:
+  - This closeout documentation commit - `docs(hackathon): record Phase 3 manual validation`
+- Corresponding files:
+  - `docs/PHASE3_OCR_TEST_REPORT.md`
+  - `docs/HACKATHON_BUILD_LOG.md`
+  - `docs/DEMO_EVIDENCE_CHECKLIST.md`
+  - `docs/COMPETITION_CHANGES.md`
+- User value:
+  - Confirms the Phase 3 OCR workflow is ready for demo and judging: text, screen region, and image input can flow through OCR Review, then into Translation, Summary, or ClearBridge structured action analysis.
+- AI-assisted development:
+  - Yes. Codex assisted with documentation, PR/Actions verification, build validation, fixed package generation, and tag preparation.
+- Notes:
+  - OCR completion does not automatically call downstream providers.
+  - AI OCR upload requires explicit user confirmation.
+  - Images and Base64 are not saved to History.
+  - History distinguishes `OCR Translation`, `OCR Summary`, and `ClearBridge OCR`.
+  - The existing Phase 1 mouse wheel issue is still disclosed as unresolved.
+  - Not fully physically validated on all display configurations.

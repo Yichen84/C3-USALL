@@ -670,3 +670,56 @@ Improve the one-time screen OCR interaction so users can press `Alt + V`, select
 - Branch: `feature/clearbridge-phase3-ocr`
 - Commit hash: `dd1aa5e`
 - Commit message: `feat(ocr): add Alt+V quick action capture workflow`
+
+## 2026-06-18 - Phase 3 / Manual Validation and Closeout
+
+### Goal
+Record final Phase 3 OCR manual validation, close the PR #4 milestone, and prepare the main branch for the Phase 3 OCR quick-actions tag.
+
+### Work Completed
+- Recorded that Phase 3 OCR manual validation passed for the intended scope.
+- Confirmed one-time screen OCR, Local OCR, image upload, editable OCR Review, Translate, Summarize, ClearBridge Analyze, and the dark translucent quick action card.
+- Confirmed OCR completion does not automatically call Translation, Summary, or ClearBridge providers.
+- Confirmed History classification remains separated as `OCR Translation`, `OCR Summary`, and `ClearBridge OCR`.
+- Confirmed AI OCR requires explicit user confirmation before cloud upload.
+- Confirmed raw images and Base64 are not saved to History.
+- Preserved the known Phase 1 mouse wheel issue as unresolved.
+- Recorded display coverage honestly: Not fully physically validated on all display configurations.
+
+### Files Changed
+- `docs/PHASE3_OCR_TEST_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+- `docs/COMPETITION_CHANGES.md`
+
+### Technical Decisions
+- Treated PR #4 as already merged because `origin/main` already contained merge commit `1579969` before this closeout run.
+- Wrote closeout documentation on `main` so the final Phase 3 tag includes the manual validation record.
+- Did not claim complete DPI or multi-monitor coverage without physical validation on every display configuration.
+
+### AI Tools Used
+- Codex: repository inspection, documentation updates, PR/Actions checks, build/package validation, and tag preparation.
+- ChatGPT: no new separate usage recorded in this closeout pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- GitHub Actions: used to verify PR #4 CI result.
+- Windows OCR API (`Windows.Media.Ocr`): Phase 3 Local OCR engine.
+- OpenAI-compatible Vision API: optional AI OCR path, gated by user confirmation.
+- Existing translation providers: used for OCR Translation.
+
+### Tests Performed
+- GitHub Actions run `27593236354`: completed successfully.
+- PR #4 CI steps passed: Restore Dependencies, Check code formatting, Build, Detect test projects, Upload Build Artifacts.
+- Release job was skipped as expected because this was not a release/tag workflow.
+- Main branch restore, format, build, publish, package smoke, and tag checks are recorded in the final closeout report.
+
+### Known Limitations
+- Some ClearBridge result areas still have unreliable mouse wheel behavior; long results should use the right-side ScrollBar.
+- Not fully physically validated on all display configurations.
+- Windows Local OCR accuracy depends on installed OCR language support and image quality.
+
+### Git Evidence
+- Branch: `main`
+- Commit hash: this closeout documentation commit
+- Commit message: `docs(hackathon): record Phase 3 manual validation`
