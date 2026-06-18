@@ -26,9 +26,9 @@ Guardrails:
 | Analyze All | Build pass | Allows all captions when selected count is 400 or fewer. |
 | Sentence Range | Build pass | Supports From/To sentence range with validation. |
 | 400 sentence limit | Build pass | Ranges above 400 disable/block analysis and show a localized error. |
-| Conservative deduplication | Build pass | Removes only consecutive exact duplicate captions after whitespace normalization. |
+| Conservative deduplication | Harness pass | Removes consecutive exact duplicates and only replaces clearly incremental consecutive captions with the more complete caption. |
 | Caption prompt | Build pass | OpenAI-compatible provider uses a caption-specific prompt covering recognition errors, repeats, source evidence, and no fabricated tasks. |
-| Mock caption analysis | Build pass | Mock Caption provider returns fixed, clearly marked Mock Mode structured output. |
+| Mock caption analysis | Harness pass | Mock Caption provider is deterministic, clearly marked Mock Mode, and now derives actions/evidence from the selected input instead of a fixed unrelated sample. |
 | Manual save | Build pass | Caption analysis results are displayed first; Save to History is user-triggered. |
 | History feature type | Build pass | Saves `FeatureType = ClearBridge Caption Analysis` with range metadata. |
 | Localization | Build pass | English, Simplified Chinese, and Arabic strings added for caption range controls and errors. |
@@ -51,6 +51,79 @@ Guardrails:
 | P4-09 / Cancel | Mock / OpenAI-compatible | English | Build pass, pending manual UI QA | Cancel should stop current request and not save History. |
 | P4-10 / concurrent clicks | Mock | English | Build pass, pending manual UI QA | Repeated Analyze clicks should not create duplicate History rows. |
 | P4-11 / Arabic UI | Mock | Arabic | Build pass, pending manual UI QA | Arabic UI should remain usable; range inputs and caption text remain readable. |
+
+## Independent No-API Audit - 2026-06-18
+
+Validation mode:
+- No real AI API key was used.
+- No external paid provider was called.
+- Mock results are treated only as Mock validation, not real model quality validation.
+- Physical desktop validation and real API validation remain separate.
+
+Code-level validation:
+- Snapshot: `LoadCaptionAnalysis` copies caption items, and `CaptionAnalysisPreprocessor.Prepare` builds a request object before provider execution.
+- Range: `From` and `To` are inclusive; range 80-140 represents 61 captions.
+- Limit: 400 captions are allowed; 401 captions are blocked with `RangeTooLarge`.
+- Deduplication: consecutive exact duplicates are removed; clear incremental updates such as `The worksheet...` to `The worksheet is due Friday.` keep the final complete caption.
+- Concurrency: one `CancellationTokenSource` drives the active request; controls are disabled while analyzing and restored in `finally`.
+- History: manual Save writes `FeatureType = ClearBridge Caption Analysis` and range metadata; provider errors and cancellation do not automatically save History.
+
+Harness validation:
+- Added `tools/Phase4CaptionAudit`.
+- `dotnet run --project .\tools\Phase4CaptionAudit\Phase4CaptionAudit.csproj -c Release`: passed 10 checks.
+- Covered inclusive ranges, 1-sentence ranges, 400/401 boundaries, snapshot immutability, deduplication, Mock output in English/Chinese/Arabic, no-action content, ambiguous content, parser fallback behavior, and cancellation.
+
+Error and provider tolerance:
+- Empty response: rejected as `EmptyResponse`.
+- Non-JSON response: rejected as `InvalidJson`.
+- Truncated JSON: rejected as `InvalidJson`.
+- Missing fields: normalized to safe defaults.
+- Illegal priority: falls back to `medium`.
+- Null actions/evidence: normalized to empty lists.
+- Operation cancellation: surfaced without producing a result.
+- Real provider network/invalid-model behavior: validated with controlled in-memory failure settings; no API key was printed or copied.
+
+Regression review:
+- Caption source buffer remains independent from database IDs and uses current-session numbering.
+- OCR, Alt+V quick card, Settings, and existing History feature types were not modified by this audit except for shared build/project exclusion for the test harness.
+- Arabic physical UI validation is still pending for this audit run.
+
+## Real API Validation - 2026-06-18
+
+Configuration:
+- Provider: OpenAI-compatible.
+- Model: `gpt-4.1-mini`.
+- Configuration source: fixed-package `setting.json`.
+- API key exposure: No key printed, logged, copied, committed, or written to docs.
+
+Runner:
+- `tools/Phase4CaptionAudit --real-api`.
+- Synthetic datasets only; no real personal, school, medical, or government data.
+- Full prompts, full generated outputs, Authorization headers, and full captions were not printed.
+- Formal user History was not written by the runner. Desktop Save to History remains pending.
+
+| Test | Output Language | Scope | Input | Status | Latency | Evidence |
+| --- | --- | --- | --- | --- | ---: | --- |
+| Dataset A range 5-25 | English | Range | 21 sentences | Success | 5743 ms | No out-of-range evidence |
+| Dataset B all | Simplified Chinese | All | 120 original / 117 processed | Success | 6798 ms | No out-of-range evidence |
+| Dataset A range 5-25 | Arabic | Range | 21 sentences | Success | 5288 ms | No out-of-range evidence |
+| Dataset C all | English | All | 400 sentences | Success | 11291 ms | No out-of-range evidence |
+| Dataset D all | Local validation | All | 401 sentences | Blocked locally | 0 ms | No provider request |
+| Dataset E no-action | English | All | 12 sentences | Success | 2419 ms | No out-of-range evidence |
+| Dataset F ambiguous | English | All | 8 sentences | Success | 5102 ms | No out-of-range evidence |
+| Cancel | English | All | 120 original / 117 processed | Cancelled | 102 ms | No result saved by runner |
+| Network error | English | Range | Local unreachable endpoint | Failed safely | 0 ms | No settings change |
+| Invalid model | English | Range | Temporary in-memory invalid model | Failed safely | 336 ms | No settings change |
+
+Finding and fix:
+- Initial real-provider run showed that no-action and ambiguous cases could return paraphrased `source_text` values that did not exactly exist in the selected captions.
+- Fixed by strengthening the caption prompt and adding `CrisisActionSourceEvidenceSanitizer`, which removes caption evidence entries whose `source_text` is not an exact substring of the selected transcript.
+- Re-run passed with no out-of-range evidence.
+
+History:
+- Success results were not automatically saved by the runner.
+- Cancel/error/401 paths did not write History.
+- Desktop manual Save verification is still required to inspect `FeatureType = ClearBridge Caption Analysis` and range metadata in the application History UI.
 
 ## History Verification
 
@@ -75,6 +148,49 @@ The compatibility History row should also use:
 - Source evidence prompt requires exact selected-caption wording.
 - No reminders, calendar entries, emails, or automatic decisions are created.
 - No API key, Authorization header, hidden system prompt, image, or Base64 is saved to History.
+- Inherited upstream Google credential-like constant in `src/apis/TranslateAPI.cs`; no evidence of user secret exposure. Separate lightweight investigation recommended.
+
+## Related Caption Translation Provider Compatibility Fix - 2026-06-18
+
+Context:
+- Related caption translation provider compatibility fix discovered during Phase 4 desktop validation.
+- ClearBridge OpenAI-compatible requests were succeeding with `gpt-4.1-mini`, while realtime caption translation through the OpenAI provider returned `400 BadRequest`.
+- The configured endpoint was `https://api.openai.com/v1/chat/completions`.
+- The API key was not printed, logged, copied, committed, or written to this report.
+
+Root cause:
+- The realtime caption translation OpenAI path used a rotating legacy/fallback request builder intended for multiple LLM-compatible providers.
+- The failing request included OpenAI-incompatible fields: `enable_thinking`, `keep_alive`, `reasoning`, `reasoning_effort`, `think`, and `thinking`.
+- OpenAI returned: `Unrecognized request arguments supplied: enable_thinking, keep_alive, reasoning, reasoning_effort, think, thinking`.
+- Error type: `invalid_request_error`.
+
+Fix:
+- Replaced the OpenAI caption translation request body with a minimal Chat Completions payload: `model`, `messages`, and `temperature`.
+- Removed the OpenAI-specific fallback rotation over non-OpenAI payload shapes.
+- Changed the realtime translation prompt to use a natural-language target such as `Simplified Chinese`.
+- Added safe OpenAI error parsing so users see `OpenAI request failed: <safe message>` instead of only `HTTP Error - BadRequest`.
+- Added redaction helpers for provider error messages.
+
+Validation:
+
+| Test | Provider | Result | Notes |
+| --- | --- | --- | --- |
+| Short sentence | OpenAI-compatible | Pass | `As gentle as sunlight.` translated successfully; no 400 |
+| Normal sentence | OpenAI-compatible | Pass | Caption-style English sentence translated successfully |
+| Long sentence | OpenAI-compatible | Pass | 300+ character input translated successfully |
+| Empty input | Local validation | Pass | Blocked locally; no provider request |
+| Cancel | OpenAI-compatible | Pass | Request surfaced as cancelled |
+| Invalid model | OpenAI-compatible | Pass | Failed safely with `model_not_found`; settings unchanged |
+| Google regression | Google no-key endpoint | Pass | Basic Google translation path still responded successfully |
+| ClearBridge regression | OpenAI-compatible | Pass | Real API caption analysis still passed range, all, Arabic, 400, 401 block, no-action, ambiguous, and cancel checks |
+
+Security checks:
+- Key printed: No.
+- Authorization header printed: No.
+- Full request body printed: No.
+- Full provider response printed: No.
+- `setting.json` tracked: No.
+- Inherited upstream Google credential-like constant in `src/apis/TranslateAPI.cs`; no evidence of user secret exposure. Separate lightweight investigation recommended.
 
 ## Build Verification
 
@@ -91,7 +207,10 @@ The compatibility History row should also use:
 
 - Phase 4 uses current-session caption analysis history; it does not yet provide a full persisted caption-session browser.
 - Deduplication is intentionally conservative and only removes consecutive exact duplicates after whitespace normalization.
+- The 2026-06-18 audit expanded deduplication only for clear consecutive incremental captions; it still avoids aggressive semantic deletion.
 - No automatic rolling summary is implemented.
 - Configured-provider semantic quality requires manual QA with real caption transcripts.
+- Real API runner validation passed; desktop Save to History remains pending.
+- Inherited upstream Google credential-like constant in `src/apis/TranslateAPI.cs`; no evidence of user secret exposure. Separate lightweight investigation recommended.
 - Arabic UI and special DPI/display configurations still require physical manual verification.
 - The existing Phase 1 mouse wheel issue over some generated result areas remains a known issue.

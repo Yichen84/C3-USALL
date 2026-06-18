@@ -813,3 +813,134 @@ Allow users to manually choose all real-time captions or a sentence range, then 
 - Branch: `feature/clearbridge-phase4-caption-analysis`
 - Commit hash: `c1b865e`
 - Commit message: `feat(captions): add manual ClearBridge caption range analysis`
+
+## 2026-06-18 - Phase 4 / No-API Audit and Real Provider Validation
+
+### Goal
+Audit Phase 4 caption analysis, validate Mock and boundary behavior, then run configured real-provider validation from the fixed local test package without exposing the API key.
+
+### Work Completed
+- Performed static audit of caption snapshot, inclusive range selection, 400-sentence limit, conservative deduplication, concurrency, cancellation, and History metadata.
+- Added a shared ClearBridge input limit class so caption analysis can preserve the 400-sentence requirement without being blocked by the Phase 1 text-input character limit.
+- Tightened caption preprocessing so clear consecutive incremental subtitles keep the most complete caption while still avoiding aggressive semantic deletion.
+- Updated Caption Mock analysis to derive actions and source evidence from the selected captions instead of returning an unrelated fixed sample.
+- Changed caption provider fallback to run Mock analysis on the selected caption text.
+- Added a no-network Phase 4 audit harness.
+- Added a real-provider validation runner gated behind `--real-api`; it reads fixed-package settings without printing the API key.
+- Added caption source evidence sanitization after real API validation found paraphrased evidence in no-action/ambiguous cases.
+- Added a manual API test checklist for real provider testing.
+
+### Files Changed
+- `LiveCaptionsTranslator.csproj`
+- `src/services/ClearBridge/ClearBridgeInputLimits.cs`
+- `src/services/ClearBridge/CaptionAnalysisPreprocessor.cs`
+- `src/services/ClearBridge/CrisisActionAnalysisService.cs`
+- `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
+- `src/services/ClearBridge/CrisisActionSourceEvidenceSanitizer.cs`
+- `src/services/ClearBridge/MockCaptionCrisisActionAnalysisProvider.cs`
+- `tools/Phase4CaptionAudit/Phase4CaptionAudit.csproj`
+- `tools/Phase4CaptionAudit/Program.cs`
+- `tools/Phase4CaptionAudit/RealApiValidation.cs`
+- `docs/PHASE4_CAPTION_ANALYSIS_TEST_REPORT.md`
+- `docs/PHASE4_MANUAL_API_TEST_CHECKLIST.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+
+### Technical Decisions
+- Used a lightweight harness instead of a full test project to avoid broad test infrastructure changes during Phase 4.
+- Kept deduplication deliberately conservative: only exact consecutive duplicates and clearly incremental consecutive captions are collapsed.
+- Kept History database writes out of the harness to avoid creating user data during audit.
+- Added evidence sanitization in Caption mode so model-generated `source_text` is only displayed when it exactly matches the selected caption transcript.
+- Kept the real API runner explicit and opt-in with `--real-api` so normal harness runs never consume provider quota.
+
+### AI Tools Used
+- Codex: static audit, minimal fixes, harness creation, documentation updates, and build/test execution.
+- ChatGPT: no new separate usage recorded in this pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- Mock Provider: used for local no-key validation.
+- OpenAI-compatible API: used through the user's fixed-package local Settings configuration for real-provider validation.
+- SQLite via Microsoft.Data.Sqlite: code path reviewed, but the harness did not write user History.
+- Existing LiveCaptions Translator caption buffer: audited as the source of selected caption snapshots.
+
+### Tests Performed
+- `dotnet run --project .\tools\Phase4CaptionAudit\Phase4CaptionAudit.csproj -c Release`: passed 10 checks.
+- Harness covered inclusive ranges, 1-sentence ranges, 400/401 boundaries, snapshot immutability, conservative duplicate/incremental caption handling, Mock output in English/Simplified Chinese/Arabic, no-action content, ambiguous content, invalid JSON, missing JSON fields, illegal priority fallback, null lists, and cancellation.
+- Real API runner used OpenAI-compatible provider `gpt-4.1-mini` from fixed-package `setting.json`; key was not printed, copied, committed, or written to docs.
+- Real API validation passed: 5-25 English range, 120 Simplified Chinese all, Arabic range, 400-sentence all, 401 local block, no-action, ambiguous, Cancel, network error, and invalid model.
+- Initial real-provider evidence check found paraphrased `source_text` in no-action/ambiguous cases; sanitizer fix was added and the re-run passed with no out-of-range evidence.
+- Inherited upstream Google credential-like constant in `src/apis/TranslateAPI.cs`; no evidence of user secret exposure. Separate lightweight investigation recommended.
+- Physical desktop validation for Arabic UI, special DPI, and multi-monitor behavior remains pending for this audit pass.
+
+### Known Limitations
+- Mock validation is not real model validation.
+- Desktop Save to History still needs manual UI verification after a successful real-provider result.
+- Full timeout behavior was not forced beyond Cancel and network/invalid-model error recovery.
+- Inherited upstream Google credential-like constant in `src/apis/TranslateAPI.cs`; no evidence of user secret exposure. Separate lightweight investigation recommended.
+- The existing Phase 1 mouse wheel issue over some generated result areas remains a known issue.
+- Phase 5 automatic rolling summary is intentionally not started.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase4-caption-analysis`
+- Commit hash: this audit commit
+- Commit message: pending
+
+## 2026-06-18 - Phase 4 / Caption Translation Provider Compatibility Fix
+
+### Goal
+Fix a realtime caption translation failure where the OpenAI-compatible provider returned `400 BadRequest` even though ClearBridge OpenAI-compatible analysis succeeded with the same configured provider.
+
+### Work Completed
+- Reproduced the failing realtime caption translation request with the short subtitle `As gentle as sunlight.` without printing the API key or Authorization header.
+- Compared the successful ClearBridge OpenAI-compatible request path with the failing caption translation OpenAI path.
+- Replaced the OpenAI caption translation request body with a minimal Chat Completions payload.
+- Added safe OpenAI error parsing so users see the provider message instead of only `HTTP Error - BadRequest`.
+- Added a validation runner for realtime OpenAI caption translation and Google regression checks.
+- Did not modify Phase 5 functionality, merge branches, create tags, or publish a release.
+
+### Files Changed
+- `src/apis/TranslateAPI.cs`
+- `src/utils/RegexPatterns.cs`
+- `tools/Phase4CaptionAudit/Program.cs`
+- `tools/Phase4CaptionAudit/TranslationOpenAiValidation.cs`
+- `docs/PHASE4_CAPTION_ANALYSIS_TEST_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+
+### Technical Decisions
+- Kept the fix scoped to the OpenAI caption translation path instead of rewriting the full translation provider architecture.
+- Removed the OpenAI path's fallback rotation over provider-specific payload variants because those variants added fields OpenAI rejects.
+- Used the same basic request shape already proven by ClearBridge: `model`, `messages`, and `temperature`.
+- Preserved existing translation provider interfaces and existing Google behavior.
+- Logged only safe metadata: final URL, model name, request field names, message role/count summaries, HTTP status, and safe OpenAI error fields.
+
+### AI Tools Used
+- Codex: diagnosis, minimal code fix, validation harness, build/test execution, and documentation updates.
+- ChatGPT: no new separate usage recorded in this pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- OpenAI-compatible API: used via the user's local fixed-package Settings configuration for safe provider validation.
+- Google translation endpoint: used for a no-key regression check.
+- Existing ClearBridge OpenAI-compatible provider: used as the successful comparison path.
+
+### Tests Performed
+- Legacy realtime caption payload reproduced `400 BadRequest`.
+- OpenAI returned: `Unrecognized request arguments supplied: enable_thinking, keep_alive, reasoning, reasoning_effort, think, thinking`.
+- Fixed OpenAI caption translation passed short, normal, and long sentence tests.
+- Empty input was blocked locally without a provider request.
+- Cancel surfaced as cancelled.
+- Temporary in-memory invalid model failed safely with `model_not_found`; settings were not modified.
+- Google regression passed.
+- ClearBridge OpenAI-compatible real API regression passed, including range, all, Arabic, 400-sentence, 401 local block, no-action, ambiguous, and cancel checks.
+
+### Known Limitations
+- The validation runner does not write formal user History records.
+- Semantic translation quality still benefits from desktop/manual review with real caption streams.
+- Inherited upstream Google credential-like constant in `src/apis/TranslateAPI.cs`; no evidence of user secret exposure. Separate lightweight investigation recommended.
+- The existing Phase 1 mouse wheel issue over some generated result areas remains a known issue.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase4-caption-analysis`
+- Commit hash: pending
+- Commit message: pending
