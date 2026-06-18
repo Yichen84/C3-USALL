@@ -53,6 +53,9 @@ namespace LiveCaptionsTranslator.services.ClearBridge
 
                 var content = ExtractAssistantContent(responseText);
                 var result = CrisisActionJsonParser.Parse(content);
+                if (promptMode == CrisisActionPromptMode.CaptionTranscript)
+                    CrisisActionSourceEvidenceSanitizer.KeepOnlyExactSourceEvidence(result, sourceText);
+
                 LogDiagnostic("Completed", started.ElapsedMilliseconds, sourceText.Length, content.Length);
                 return result;
             }

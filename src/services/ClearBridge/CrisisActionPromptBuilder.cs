@@ -45,6 +45,7 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 $"Write the analysis in {outputLanguage}. " +
                 "The output language applies to title, summary, priority explanation content, important_points, actions, unclear_items, warnings, and source_evidence.claim. " +
                 "Keep source_evidence.source_text as exact wording copied from the caption transcript; do not translate or paraphrase source_text. " +
+                "If you cannot copy an exact contiguous substring from the selected transcript for a source_evidence item, leave source_text empty instead of inventing or paraphrasing it. " +
                 "Treat caption uncertainty carefully. Do not turn unclear captions into certain facts. " +
                 "Extract only information clearly supported by the selected caption range. " +
                 "Do not use or imply information outside the selected numbered transcript. " +
