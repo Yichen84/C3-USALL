@@ -42,35 +42,17 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                     previousContextJson,
                     request.BatchTranscript);
 
-                var requestData = new
-                {
-                    model = config!.ModelName,
-                    temperature = config.Temperature,
-                    response_format = new { type = "json_object" },
-                    messages = new[]
-                    {
-                        new { role = "system", content = systemPrompt },
-                        new { role = "user", content = userPrompt }
-                    }
-                };
-
-                var jsonContent = JsonSerializer.Serialize(requestData, JsonOptions);
-                using var httpRequest = new HttpRequestMessage(HttpMethod.Post, TextUtil.NormalizeUrl(config.ApiUrl));
-                httpRequest.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                httpRequest.Headers.Add("Authorization", $"Bearer {config.ApiKey}");
-
-                using var response = await Client.SendAsync(httpRequest, timeoutCts.Token);
-                responseText = await response.Content.ReadAsStringAsync(timeoutCts.Token);
-                if (!response.IsSuccessStatusCode)
-                    throw new ClearBridgeAnalysisException(
-                        "HttpError",
-                        $"The provider returned HTTP {(int)response.StatusCode} ({response.StatusCode}).");
-
-                var content = ExtractAssistantContent(responseText);
-                var result = RollingSummaryJsonParser.Parse(content);
+                var content = await SendChatRequestAsync(config!, systemPrompt, userPrompt, timeoutCts.Token);
+                responseText = content;
+                var result = await ParseWithSingleRetryAsync(
+                    content,
+                    config!,
+                    systemPrompt,
+                    userPrompt,
+                    timeoutCts.Token);
                 CrisisActionSourceEvidenceSanitizer.KeepOnlyExactSourceEvidence(
                     ToCrisisResult(result),
-                    BuildEvidenceCorpus(request));
+                    request.BatchTranscript);
                 RollingSummaryJsonParser.ClampContext(result.ContextCache);
                 LogDiagnostic("Completed", started.ElapsedMilliseconds, request.CharacterCount, content.Length);
                 return result;
@@ -90,6 +72,61 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 LogDiagnostic("Failed", started.ElapsedMilliseconds, request.CharacterCount, responseText.Length, ex.ErrorCode);
                 throw;
             }
+        }
+
+        private static async Task<RollingSummaryResult> ParseWithSingleRetryAsync(
+            string content,
+            OpenAIConfig config,
+            string systemPrompt,
+            string userPrompt,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return RollingSummaryJsonParser.Parse(content);
+            }
+            catch (ClearBridgeAnalysisException ex) when (ex.ErrorCode is "InvalidJson" or "EmptyResponse")
+            {
+                var retryPrompt = userPrompt +
+                    "\n\nThe previous response was not valid JSON. Return only one complete parseable JSON object. " +
+                    "Use the exact English snake_case property names from the schema. Do not translate JSON keys. " +
+                    "Use standard double-quoted JSON strings and escape quotes, backslashes, and line breaks.";
+                var retryContent = await SendChatRequestAsync(config, systemPrompt, retryPrompt, cancellationToken);
+                return RollingSummaryJsonParser.Parse(retryContent);
+            }
+        }
+
+        private static async Task<string> SendChatRequestAsync(
+            OpenAIConfig config,
+            string systemPrompt,
+            string userPrompt,
+            CancellationToken cancellationToken)
+        {
+            var requestData = new
+            {
+                model = config.ModelName,
+                temperature = config.Temperature,
+                response_format = new { type = "json_object" },
+                messages = new[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user", content = userPrompt }
+                }
+            };
+
+            var jsonContent = JsonSerializer.Serialize(requestData, JsonOptions);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, TextUtil.NormalizeUrl(config.ApiUrl));
+            httpRequest.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            httpRequest.Headers.Add("Authorization", $"Bearer {config.ApiKey}");
+
+            using var response = await Client.SendAsync(httpRequest, cancellationToken);
+            var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                throw new ClearBridgeAnalysisException(
+                    "HttpError",
+                    $"The provider returned HTTP {(int)response.StatusCode} ({response.StatusCode}).");
+
+            return ExtractAssistantContent(responseText);
         }
 
         private static void ValidateConfig(OpenAIConfig? config)
@@ -141,23 +178,6 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 UnclearItems = result.UnresolvedQuestions,
                 SourceEvidence = result.SourceEvidence
             };
-        }
-
-        private static string BuildEvidenceCorpus(RollingSummaryRequest request)
-        {
-            var context = request.PreviousContext;
-            return string.Join(
-                Environment.NewLine,
-                new[]
-                {
-                    request.BatchTranscript,
-                    context.CompressedNarrative,
-                    string.Join(Environment.NewLine, context.EstablishedFacts),
-                    string.Join(Environment.NewLine, context.ConfirmedActions),
-                    string.Join(Environment.NewLine, context.DatesAndDeadlines),
-                    string.Join(Environment.NewLine, context.Locations),
-                    string.Join(Environment.NewLine, context.Warnings)
-                });
         }
 
         private static void LogDiagnostic(

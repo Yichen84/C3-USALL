@@ -42,6 +42,9 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 - Phase 4 uses a caption-specific prompt that warns the model about speech recognition errors, repeated fragments, incomplete sentences, and speaker examples.
 - Phase 5 uses a rolling-summary prompt with compressed prior context plus only the current caption batch.
 - `source_evidence.source_text` is instructed to preserve exact source wording instead of translating evidence snippets.
+- Phase 5 rolling summary source evidence is sanitized against the current caption batch only; prior compressed context cannot be used as new evidence.
+- Phase 5 rolling summary uses one stricter retry only when the provider returns empty or invalid JSON.
+- Phase 5 real API validation used synthetic captions through the user's local fixed-package configuration. The audit output records only provider status, batch number, counts, latency, retry status, and pass/fail booleans.
 
 ### Google Translate
 
@@ -93,6 +96,7 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 - API keys must not be committed.
 - `.gitignore` excludes local `setting.json`, `translation_history.db`, and logs.
 - Authorization headers must not be logged.
+- Full request bodies, full rolling caption batches, full compressed context, and full model responses must not be printed in audit output or written to ordinary logs.
 - ClearBridge diagnostic logging records only provider, operation status, latency, input length, output length, and error type.
 - Logs must not store full pasted source text or full AI response text.
 - History stores the pasted source text and generated analysis result locally in SQLite because the user explicitly requested History integration.

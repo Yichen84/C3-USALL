@@ -14,6 +14,9 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             cancellationToken.ThrowIfCancellationRequested();
 
             var batch = Math.Max(1, request.BatchNumber);
+            var transcript = request.BatchTranscript;
+            var correctsDeadline = transcript.Contains("Monday", StringComparison.OrdinalIgnoreCase);
+            var correctsSubmissionLocation = transcript.Contains("project portal", StringComparison.OrdinalIgnoreCase);
             var topic = Localize(
                 outputLanguage,
                 "School project planning",
@@ -50,9 +53,39 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             if (batch >= 3)
             {
                 context.Locations.RemoveAll(item => item.Contains("Room 204", StringComparison.OrdinalIgnoreCase));
-                Merge(context.Locations, "Room 310");
-                Merge(context.Warnings, Localize(outputLanguage, "The room changed from Room 204 to Room 310.", "地点从 Room 204 改为 Room 310。", "تغيرت القاعة من Room 204 إلى Room 310."));
+                if (correctsDeadline)
+                {
+                    context.DatesAndDeadlines.Clear();
+                    Merge(context.DatesAndDeadlines, Localize(outputLanguage, "Monday at 10 AM.", "周一上午 10 点。", "الاثنين الساعة 10 صباحا."));
+                }
+                if (correctsSubmissionLocation)
+                {
+                    context.Locations.RemoveAll(item => item.Contains("Google Classroom", StringComparison.OrdinalIgnoreCase));
+                    Merge(context.Locations, "project portal");
+                }
+
+                Merge(context.Locations, correctsSubmissionLocation ? "project portal" : "Room 310");
+                Merge(
+                    context.Warnings,
+                    correctsDeadline
+                        ? Localize(
+                            outputLanguage,
+                            "The latest batch corrected earlier deadline or submission details.",
+                            "最新批次更正了之前的截止时间或提交细节。",
+                            "صححت الدفعة الأخيرة الموعد النهائي أو تفاصيل التسليم السابقة.")
+                        : Localize(outputLanguage, "The room changed from Room 204 to Room 310.", "地点从 Room 204 改为 Room 310。", "تغيرت القاعة من Room 204 إلى Room 310."));
                 context.UnresolvedQuestions.RemoveAll(item => item.Contains("location", StringComparison.OrdinalIgnoreCase));
+                if (transcript.Contains("room", StringComparison.OrdinalIgnoreCase) &&
+                    transcript.Contains("not confirmed", StringComparison.OrdinalIgnoreCase))
+                {
+                    Merge(
+                        context.UnresolvedQuestions,
+                        Localize(
+                            outputLanguage,
+                            "The final room is not confirmed.",
+                            "最终教室尚未确认。",
+                            "لم يتم تأكيد القاعة النهائية."));
+                }
             }
 
             context.BatchCount = batch;
@@ -72,15 +105,33 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                         new ActionItem
                         {
                             Task = Localize(outputLanguage, "Submit the worksheet.", "提交 worksheet。", "تسليم ورقة العمل."),
-                            Deadline = batch >= 2 ? Localize(outputLanguage, "Friday at 5 PM", "周五下午 5 点", "الجمعة الساعة 5 مساء") : string.Empty,
-                            Location = "Google Classroom"
+                            Deadline = correctsDeadline
+                                ? Localize(outputLanguage, "Monday at 10 AM", "周一上午 10 点", "الاثنين الساعة 10 صباحا")
+                                : Localize(outputLanguage, "Friday at 5 PM", "周五下午 5 点", "الجمعة الساعة 5 مساء"),
+                            Location = correctsSubmissionLocation ? "project portal" : "Google Classroom"
                         }
                     ]
                     : [],
-                DatesAndDeadlines = batch >= 2 ? [Localize(outputLanguage, "Friday at 5 PM", "周五下午 5 点", "الجمعة الساعة 5 مساء")] : [],
-                Locations = batch >= 3 ? ["Room 310"] : batch >= 2 ? ["Google Classroom"] : [],
-                Warnings = batch >= 3 ? [Localize(outputLanguage, "Room 204 was superseded by Room 310.", "Room 204 已被 Room 310 替代。", "تم استبدال Room 204 بـ Room 310.")] : [],
-                UnresolvedQuestions = batch == 1 ? [Localize(outputLanguage, "The final submission details are not yet clear.", "最终提交细节尚不清楚。", "تفاصيل التسليم النهائية غير واضحة بعد.")] : [],
+                DatesAndDeadlines = batch >= 2
+                    ? [correctsDeadline ? Localize(outputLanguage, "Monday at 10 AM", "周一上午 10 点", "الاثنين الساعة 10 صباحا") : Localize(outputLanguage, "Friday at 5 PM", "周五下午 5 点", "الجمعة الساعة 5 مساء")]
+                    : [],
+                Locations = batch >= 3 ? [correctsSubmissionLocation ? "project portal" : "Room 310"] : batch >= 2 ? ["Google Classroom"] : [],
+                Warnings = batch >= 3
+                    ? [
+                        correctsDeadline
+                            ? Localize(
+                                outputLanguage,
+                                "The latest batch corrected earlier deadline or submission details.",
+                                "最新批次更正了之前的截止时间或提交细节。",
+                                "صححت الدفعة الأخيرة الموعد النهائي أو تفاصيل التسليم السابقة.")
+                            : Localize(outputLanguage, "Room 204 was superseded by Room 310.", "Room 204 已被 Room 310 替代。", "تم استبدال Room 204 بـ Room 310.")
+                    ]
+                    : [],
+                UnresolvedQuestions = batch == 1
+                    ? [Localize(outputLanguage, "The final submission details are not yet clear.", "最终提交细节尚不清楚。", "تفاصيل التسليم النهائية غير واضحة بعد.")]
+                    : batch >= 3 && transcript.Contains("not confirmed", StringComparison.OrdinalIgnoreCase)
+                        ? [Localize(outputLanguage, "The final room is not confirmed.", "最终教室尚未确认。", "لم يتم تأكيد القاعة النهائية.")]
+                        : [],
                 SourceEvidence = string.IsNullOrWhiteSpace(evidence)
                     ? []
                     :

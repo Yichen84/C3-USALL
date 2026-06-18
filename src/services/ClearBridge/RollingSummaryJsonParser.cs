@@ -22,7 +22,7 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             if (string.IsNullOrWhiteSpace(rawJson))
                 throw new ClearBridgeAnalysisException("EmptyResponse", "The provider returned an empty response.");
 
-            var json = TrimMarkdownFence(rawJson.Trim());
+            var json = ExtractFirstJsonObject(TrimMarkdownFence(rawJson.Trim()));
             RollingSummaryDto? dto;
             try
             {
@@ -143,6 +143,54 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             var lastFence = text.LastIndexOf("```", StringComparison.Ordinal);
             if (firstNewLine >= 0 && lastFence > firstNewLine)
                 return text[(firstNewLine + 1)..lastFence].Trim();
+
+            return text;
+        }
+
+        private static string ExtractFirstJsonObject(string text)
+        {
+            var start = text.IndexOf('{');
+            if (start < 0)
+                return text;
+
+            var depth = 0;
+            var inString = false;
+            var escaped = false;
+            for (var index = start; index < text.Length; index++)
+            {
+                var current = text[index];
+                if (escaped)
+                {
+                    escaped = false;
+                    continue;
+                }
+
+                if (current == '\\' && inString)
+                {
+                    escaped = true;
+                    continue;
+                }
+
+                if (current == '"')
+                {
+                    inString = !inString;
+                    continue;
+                }
+
+                if (inString)
+                    continue;
+
+                if (current == '{')
+                {
+                    depth++;
+                }
+                else if (current == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                        return text[start..(index + 1)].Trim();
+                }
+            }
 
             return text;
         }

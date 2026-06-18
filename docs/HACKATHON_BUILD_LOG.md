@@ -1038,3 +1038,62 @@ Add a user-controlled rolling summary mode for realtime captions using 60/90/120
   - `test(captions): validate Phase 5 rolling summary behavior`
   - `docs(hackathon): document rolling summary and temporary context`
   - `feat(captions): add rolling summary overlay window`
+
+## 2026-06-18 - Phase 5 / Rolling Summary Real API and Risk Audit
+
+### Goal
+Independently audit Phase 5 rolling summary behavior with synthetic captions, verify the real OpenAI-compatible provider path without exposing secrets, and fix risks discovered during validation.
+
+### Work Completed
+- Removed automatic Mock fallback from rolling summary provider failures so network, HTTP, and timeout errors do not advance the caption cursor or compressed context.
+- Limited rolling `source_evidence.source_text` to the current caption batch only; prior compressed context may guide continuity but cannot become new evidence.
+- Strengthened the rolling prompt to require standard parseable JSON with English snake_case keys even for Chinese or Arabic output.
+- Added one provider-level retry only for empty or invalid JSON responses.
+- Extended `tools/Phase5RollingSummaryAudit` from 8 to 15 checks.
+- Added `docs/PHASE5_MANUAL_API_TEST_CHECKLIST.md`.
+
+### Files Changed
+- `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
+- `src/services/ClearBridge/MockRollingSummaryProvider.cs`
+- `src/services/ClearBridge/OpenAiRollingSummaryProvider.cs`
+- `src/services/ClearBridge/RollingSummaryJsonParser.cs`
+- `src/services/ClearBridge/RollingSummarySessionService.cs`
+- `tools/Phase5RollingSummaryAudit/Program.cs`
+- `docs/PHASE5_ROLLING_SUMMARY_TEST_REPORT.md`
+- `docs/PHASE5_MANUAL_API_TEST_CHECKLIST.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+- `docs/AI_AND_DATA_DISCLOSURE.md`
+
+### Technical Decisions
+- Failed real-provider requests now surface as errors instead of silently succeeding with Mock because silent fallback could consume captions and misrepresent provider quality.
+- Source evidence is current-batch-only to prevent old compressed background facts from being cited as if they appeared in the latest captions.
+- The JSON parser accepts a complete JSON object wrapped by provider prose, but still rejects malformed or truncated JSON.
+- The real API harness prints only provider status, batch number, counts, latency, retry status, and pass/fail booleans; it does not print secrets, full subtitles, prompts, context, request bodies, or model responses.
+
+### AI Tools Used
+- Codex: static audit, bug fixes, harness expansion, real API validation orchestration, and documentation.
+- ChatGPT: no new separate usage recorded in this pass.
+- Other AI: the configured OpenAI-compatible runtime model was used only for synthetic rolling summary validation.
+
+### External Services / Libraries
+- OpenAI-compatible API: used via the user's local fixed-package Settings configuration for synthetic real-provider validation.
+- Mock Rolling Summary provider: used for offline no-key validation and deterministic failure/concurrency tests.
+- Existing .NET / WPF stack and SQLite History layer.
+
+### Tests Performed
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed.
+- `dotnet run --project .\tools\Phase5RollingSummaryAudit\Phase5RollingSummaryAudit.csproj -c Release`: passed 15 checks.
+- `dotnet run --no-build --project .\tools\Phase5RollingSummaryAudit\Phase5RollingSummaryAudit.csproj -c Release -- --real-api`: passed with synthetic captions only.
+- Real API validation covered three batches, correction handling, Simplified Chinese output, Arabic output with one invalid-JSON retry, and synthetic failure rollback.
+
+### Known Limitations
+- Real API validation used synthetic captions, not real classroom or user data.
+- Physical desktop validation of the overlay with live captions is still pending.
+- Arabic output may require the new one-time invalid-JSON retry depending on the configured provider/model.
+- Existing Phase 1 mouse wheel limitation over some generated result areas remains disclosed.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase5-rolling-summary`
+- Commit hash: pending
+- Commit message: pending

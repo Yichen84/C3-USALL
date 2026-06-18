@@ -12,8 +12,8 @@ namespace LiveCaptionsTranslator.services.ClearBridge
         public const int MinIntervalSeconds = 60;
         public const int MaxIntervalSeconds = 120;
 
-        private readonly MockRollingSummaryProvider mockProvider = new();
-        private readonly OpenAiRollingSummaryProvider openAiProvider = new();
+        private readonly IRollingSummaryProvider mockProvider;
+        private readonly IRollingSummaryProvider openAiProvider;
         private readonly SemaphoreSlim requestGate = new(1, 1);
 
         private RollingContextCache contextCache = new();
@@ -39,6 +39,19 @@ namespace LiveCaptionsTranslator.services.ClearBridge
         public bool IsProcessing => status == RollingSummaryStatus.Processing;
 
         public DateTimeOffset SessionStart => sessionStart;
+
+        public RollingSummarySessionService()
+            : this(new MockRollingSummaryProvider(), new OpenAiRollingSummaryProvider())
+        {
+        }
+
+        public RollingSummarySessionService(
+            IRollingSummaryProvider mockProvider,
+            IRollingSummaryProvider openAiProvider)
+        {
+            this.mockProvider = mockProvider ?? throw new ArgumentNullException(nameof(mockProvider));
+            this.openAiProvider = openAiProvider ?? throw new ArgumentNullException(nameof(openAiProvider));
+        }
 
         public void Start()
         {
@@ -139,6 +152,9 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             string outputLanguage,
             CancellationToken cancellationToken)
         {
+            if (!IsRunning || IsPaused)
+                throw new ClearBridgeAnalysisException("RollingSummaryNotRunning", "Rolling summary is not currently accepting requests.");
+
             if (!await requestGate.WaitAsync(0, cancellationToken))
                 throw new ClearBridgeAnalysisException("AlreadyProcessing", "A rolling summary request is already running.");
 
@@ -149,33 +165,8 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 status = RollingSummaryStatus.Processing;
                 var request = CreatePendingRequest(allSentences);
                 var provider = GetProvider(providerName);
-                RollingSummaryResult result;
-                try
-                {
-                    result = await provider.AnalyzeBatchAsync(request, outputLanguage, cancellationToken);
-                }
-                catch (ClearBridgeAnalysisException ex)
-                    when (provider is not MockRollingSummaryProvider &&
-                          ex.ErrorCode is "ProviderTimeout" or "HttpError" or "NetworkError")
-                {
-                    result = await mockProvider.AnalyzeBatchAsync(request, outputLanguage, cancellationToken);
-                    var fallback = CompleteRequest(request, result, mockProvider.Name, isMock: true);
-                    status = RollingSummaryStatus.Listening;
-                    var fallbackOutcome = new RollingSummaryOutcome
-                    {
-                        Request = fallback.Request,
-                        Result = fallback.Result,
-                        ProviderName = fallback.ProviderName,
-                        IsMock = fallback.IsMock,
-                        UsedFallback = true,
-                        FallbackReason = ex.ErrorCode,
-                        CompletedAt = fallback.CompletedAt
-                    };
-                    LastOutcome = fallbackOutcome;
-                    return fallbackOutcome;
-                }
-
-                var outcome = CompleteRequest(request, result, provider.Name, provider is MockRollingSummaryProvider);
+                var result = await provider.AnalyzeBatchAsync(request, outputLanguage, cancellationToken);
+                var outcome = CompleteRequest(request, result, provider.Name, ReferenceEquals(provider, mockProvider));
                 status = RollingSummaryStatus.Listening;
                 return outcome;
             }

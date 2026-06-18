@@ -59,6 +59,9 @@ Temporary cache:
 Provider safety:
 - OpenAI-compatible rolling summary uses minimal Chat Completions fields: `model`, `temperature`, `response_format`, and `messages`.
 - It does not send `enable_thinking`, `keep_alive`, `think`, `thinking`, `reasoning`, or `reasoning_effort`.
+- Source evidence is sanitized against the current caption batch only. Previous compressed context may guide continuity but is not accepted as new `source_evidence.source_text`.
+- Provider HTTP/network/timeout failures do not fall back to Mock and do not advance the rolling cursor or compressed context.
+- Empty or invalid JSON responses trigger one stricter JSON retry. If retry also fails, the request fails without advancing cursor/cache.
 - API key and Authorization header are not logged.
 
 History:
@@ -74,7 +77,7 @@ Command:
 dotnet run --project .\tools\Phase5RollingSummaryAudit\Phase5RollingSummaryAudit.csproj -c Release
 ```
 
-Result: Passed 8 checks.
+Result: Passed 15 checks.
 
 Covered cases:
 
@@ -86,7 +89,14 @@ Covered cases:
 | Cancel rollback | Pass | Cancelled batch remained pending and could retry |
 | 10 batches | Pass | Batch count reached 10 and cache stayed bounded |
 | Mock languages | Pass | English, Simplified Chinese, Arabic Mock output returned |
+| Superseded facts | Pass | Later Monday/project portal correction replaced earlier Friday/Google Classroom cache entries |
+| Provider failure rollback | Pass | Synthetic provider failure did not advance cursor or batch count; retry consumed the same pending captions |
+| Concurrent Process Now | Pass | Second simultaneous request was rejected with `AlreadyProcessing` |
+| Pause / Stop guards | Pass | Paused or stopped sessions did not consume captions |
+| Confirmed History metadata | Pass | Confirmed JSON includes user confirmation and `temporary_context_persisted = false` |
+| Source Evidence scope | Pass | Prior-context evidence was removed when not present in current batch |
 | Null fields | Pass | Parser normalized null lists/fields |
+| Wrapped JSON | Pass | Parser extracted a complete JSON object when provider text wrapped it with prose |
 | Invalid JSON | Pass | Parser rejected invalid JSON safely |
 
 ## Desktop Validation
@@ -105,9 +115,23 @@ Physical desktop validation still needed:
 
 ## Real API Validation
 
-Pending.
+Command:
 
-This pass did not call a paid provider for Phase 5 rolling summary. Mock validation should not be described as real model quality validation.
+```powershell
+dotnet run --no-build --project .\tools\Phase5RollingSummaryAudit\Phase5RollingSummaryAudit.csproj -c Release -- --real-api
+```
+
+Result: Passed with synthetic captions only.
+
+Safe summary:
+- Fixed-package OpenAI-compatible config was present with API key, model, and URL. Values were not printed.
+- Three rolling batches succeeded.
+- Correction handling passed: Monday replaced Friday and project portal replaced Google Classroom in the compressed context.
+- Simplified Chinese output succeeded.
+- Arabic output initially returned invalid JSON, then succeeded after the single stricter JSON retry.
+- Synthetic failure rollback passed with cursor and batch count remaining at zero.
+
+No API key, Authorization header, full request body, full subtitle transcript, full compressed context, or full model response was printed or committed.
 
 ## Regression Notes
 
@@ -121,3 +145,5 @@ This pass did not call a paid provider for Phase 5 rolling summary. Mock validat
 - The interval selector is on the Caption page rather than the full Settings page.
 - AI-generated results are marked unreviewed in status text, but item-level Confirm / Inaccurate / Needs Review controls are not yet implemented as separate per-item buttons.
 - Real API quality and physical desktop behavior need manual validation before final competition packaging.
+- Real API validation used synthetic captions from the audit harness, not real classroom or user data.
+- Arabic rolling summary may require the new single JSON retry with the current configured provider.
