@@ -41,6 +41,15 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] 400-sentence limit message.
 - [ ] ClearBridge Caption Analysis result.
 - [ ] History row with `ClearBridge Caption Analysis`.
+- [ ] Rolling Summary panel on Caption page.
+- [ ] Rolling Summary default Off / Stopped state.
+- [ ] Rolling Summary interval selector showing 60 / 90 / 120 seconds and default 90 seconds.
+- [ ] Rolling Summary Start / Pause / Resume / Stop controls.
+- [ ] Process Now demo without waiting 90 seconds.
+- [ ] Rolling Summary AI-generated / Unreviewed status.
+- [ ] Rolling Summary temporary context privacy note.
+- [ ] Save Confirmed Summary and History row with `ClearBridge Rolling Summary`.
+- [ ] Clear Temporary Context behavior.
 - [ ] Long-result demo uses the right-side scrollbar.
 - [ ] Known mouse wheel limitation is disclosed if showing long results.
 
@@ -95,3 +104,6 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - Phase 4 no-API audit: harness passed for range math, 400/401 boundaries, snapshot immutability, conservative deduplication, Mock language outputs, parser errors, and cancellation.
 - Phase 4 real API evidence: runner passed configured-provider validation for 5-25 range, 120 all, Arabic output, 400 sentences, 401 local block, no-action, ambiguous content, Cancel, network error, and invalid model. Desktop History Save evidence is still pending.
 - Phase 4 display validation: code-level verified; physical desktop validation remains pending for special DPI, multi-monitor, and Arabic layout combinations.
+- Phase 5 Rolling Summary: implemented on the Caption page with Start/Pause/Resume/Stop, Process Now, memory-only compressed context, Mock/OpenAI-compatible provider paths, and confirmed History save.
+- Phase 5 harness: passed three-batch cache evolution, consume-once behavior, tiny-batch blocking, cancellation rollback, 10-batch bounds, Mock English/Chinese/Arabic, parser null fields, and invalid JSON.
+- Phase 5 real API and physical desktop validation: pending; do not claim as completed until manually verified.

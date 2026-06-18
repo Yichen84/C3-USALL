@@ -389,3 +389,34 @@ This document separates upstream functionality from hackathon work. Do not claim
   - A single analysis is limited to 400 selected sentences and will not silently truncate.
   - The feature records `ClearBridge Caption Analysis` separately from Live Captions, OCR Translation, OCR Summary, and ClearBridge OCR.
   - Automatic rolling summary is not part of Phase 4.
+
+### Phase 5 Rolling Caption Summary
+
+- Start date: 2026-06-18
+- Completion date: 2026-06-18
+- Corresponding commits:
+  - Pending Phase 5 implementation commit.
+- Corresponding files:
+  - `src/models/ClearBridge/RollingContextCache.cs`
+  - `src/models/ClearBridge/RollingSummaryRequest.cs`
+  - `src/models/ClearBridge/RollingSummaryResult.cs`
+  - `src/models/ClearBridge/RollingSummaryStatus.cs`
+  - `src/services/ClearBridge/RollingSummarySessionService.cs`
+  - `src/services/ClearBridge/MockRollingSummaryProvider.cs`
+  - `src/services/ClearBridge/OpenAiRollingSummaryProvider.cs`
+  - `src/services/ClearBridge/RollingSummaryJsonParser.cs`
+  - `src/pages/CaptionPage.xaml`
+  - `src/pages/CaptionPage.xaml.cs`
+  - `src/utils/HistoryLogger.cs`
+  - `tools/Phase5RollingSummaryAudit/`
+  - `docs/PHASE5_ROLLING_SUMMARY_TEST_REPORT.md`
+- User value:
+  - Lets users opt into rolling caption analysis during longer classes, meetings, or talks, then review evolving topics, summaries, key points, actions, dates, warnings, and unresolved questions without sending every individual caption to a provider.
+- AI-assisted development:
+  - Yes. Codex assisted with implementation, harness validation, and documentation.
+- Notes:
+  - Rolling Summary is default-off and user-controlled.
+  - Default batch interval is 90 seconds, with 60 and 120 second options.
+  - Temporary raw batches and compressed context are memory-only and cleared on app close.
+  - Confirmed History saving does not persist full raw caption batches.
+  - Real API and physical desktop validation remain pending for this Phase 5 MVP.

@@ -944,3 +944,81 @@ Fix a realtime caption translation failure where the OpenAI-compatible provider 
 - Branch: `feature/clearbridge-phase4-caption-analysis`
 - Commit hash: pending
 - Commit message: pending
+
+## 2026-06-18 - Phase 5 / Rolling Caption Summary MVP
+
+### Goal
+Add a user-controlled rolling summary mode for realtime captions using 60/90/120 second batches, temporary memory-only context, and confirmed History saving.
+
+### Work Completed
+- Added rolling summary models for request snapshots, results, context cache, status, and outcomes.
+- Added a rolling summary session service with single-request protection, batch thresholds, success-only cursor advancement, failure/cancel rollback, and memory-only context clearing.
+- Added Mock and OpenAI-compatible rolling summary providers.
+- Added a strict rolling summary JSON parser and prompt shape.
+- Added a Caption page Rolling Summary panel with Start, Pause, Resume, Stop, Process Now, Save Confirmed Summary, and Clear Temporary Context.
+- Added user-visible English, Simplified Chinese, and Arabic strings.
+- Added `ClearBridge Rolling Summary` History classification with confirmed-summary metadata and `TemporaryContextPersisted = 0`.
+- Added `tools/Phase5RollingSummaryAudit` harness.
+
+### Files Changed
+- `src/models/ClearBridge/RollingContextCache.cs`
+- `src/models/ClearBridge/RollingSummaryOutcome.cs`
+- `src/models/ClearBridge/RollingSummaryRequest.cs`
+- `src/models/ClearBridge/RollingSummaryResult.cs`
+- `src/models/ClearBridge/RollingSummaryStatus.cs`
+- `src/services/ClearBridge/IRollingSummaryProvider.cs`
+- `src/services/ClearBridge/MockRollingSummaryProvider.cs`
+- `src/services/ClearBridge/OpenAiRollingSummaryProvider.cs`
+- `src/services/ClearBridge/RollingSummaryJsonParser.cs`
+- `src/services/ClearBridge/RollingSummarySessionService.cs`
+- `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
+- `src/pages/CaptionPage.xaml`
+- `src/pages/CaptionPage.xaml.cs`
+- `src/windows/MainWindow.xaml.cs`
+- `src/utils/HistoryLogger.cs`
+- `src/assets/localization/en.json`
+- `src/assets/localization/zh-Hans.json`
+- `src/assets/localization/ar.json`
+- `tools/Phase5RollingSummaryAudit/Phase5RollingSummaryAudit.csproj`
+- `tools/Phase5RollingSummaryAudit/Program.cs`
+- `docs/PHASE5_ROLLING_SUMMARY_TEST_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+- `docs/COMPETITION_CHANGES.md`
+- `docs/AI_AND_DATA_DISCLOSURE.md`
+- `docs/SUBMISSION_DRAFT.md`
+- `docs/DEMO_EVIDENCE_CHECKLIST.md`
+
+### Technical Decisions
+- Kept Phase 5 as a manual opt-in mode on the Caption page instead of changing the caption capture pipeline.
+- Used current-session caption sequence numbers and a success-only cursor so failed or cancelled batches are not lost.
+- Used a compressed context cache instead of resending full caption history every batch.
+- Kept temporary context memory-only by default and cleared on app close or explicit Clear Temporary Context.
+- Saved only user-confirmed rolling summaries to History, not full raw caption batches.
+
+### AI Tools Used
+- Codex: implementation, harness creation, documentation updates, and build/test execution.
+- ChatGPT: no new separate usage recorded in this pass.
+- Other AI: none recorded.
+
+### External Services / Libraries
+- OpenAI-compatible API: optional runtime provider for rolling summary.
+- Mock Rolling Summary provider: used for no-key demos and automated harness validation.
+- Existing LiveCaptions Translator caption buffer: source for rolling summary batches.
+- SQLite via Microsoft.Data.Sqlite: used only when the user saves confirmed summaries.
+
+### Tests Performed
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 errors; existing nullable warnings remain.
+- `dotnet run --project .\tools\Phase5RollingSummaryAudit\Phase5RollingSummaryAudit.csproj -c Release`: passed 8 checks.
+- Harness covered three-batch context evolution, consume-once cursor behavior, minimum threshold blocking, cancellation rollback, 10-batch cache bounds, Mock English/Simplified Chinese/Arabic, null-field parsing, and invalid JSON handling.
+
+### Known Limitations
+- Physical desktop validation with real captions remains pending.
+- Real API semantic quality validation remains pending.
+- Item-level Confirm / Inaccurate / Needs Review controls are not yet separate per-item buttons in this MVP.
+- The interval selector is on the Caption page rather than the full Settings page.
+- The existing Phase 1 mouse wheel issue over some generated result areas remains a known issue.
+
+### Git Evidence
+- Branch: `feature/clearbridge-phase5-rolling-summary`
+- Commit hash: pending
+- Commit message: pending
