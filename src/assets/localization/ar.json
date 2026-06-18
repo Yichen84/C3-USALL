@@ -308,5 +308,14 @@
   "Caption.RollingSummary.Status.Processing": "جار معالجة الدفعة",
   "Caption.RollingSummary.Status.Paused": "متوقف مؤقتًا",
   "Caption.RollingSummary.Status.Error": "خطأ",
-  "Caption.RollingSummary.Status.Reviewing": "مولد بالذكاء الاصطناعي / غير مؤكد"
+  "Caption.RollingSummary.Status.Reviewing": "مولد بالذكاء الاصطناعي / غير مؤكد",
+  "Caption.RollingSummary.OpenOverlay": "فتح الملخص العائم",
+  "Caption.RollingSummary.OpenFullReview": "فتح المراجعة الكاملة",
+  "Caption.RollingSummary.Overlay.Title": "الملخص المتجدد",
+  "Caption.RollingSummary.Overlay.Empty": "لا توجد دفعات بعد. ابدأ الملخص المتجدد وانتظر اكتمال أول دفعة.",
+  "Caption.RollingSummary.Overlay.BatchHeader": "الدفعة {0} · تم التحديث {1}",
+  "Caption.RollingSummary.Overlay.Topmost": "دائمًا في الأعلى",
+  "Caption.RollingSummary.Overlay.Collapse": "طي",
+  "Caption.RollingSummary.Overlay.Close": "إغلاق",
+  "Caption.RollingSummary.Overlay.Saved": "تم الحفظ في السجل"
 }

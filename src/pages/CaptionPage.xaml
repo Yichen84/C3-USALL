@@ -118,6 +118,11 @@
                         MinWidth="150"
                         Margin="0,0,6,6"
                         Click="RollingClearButton_Click" />
+                    <Button
+                        x:Name="RollingOpenOverlayButton"
+                        MinWidth="150"
+                        Margin="0,0,6,6"
+                        Click="RollingOpenOverlayButton_Click" />
                 </WrapPanel>
 
                 <Border

@@ -308,5 +308,14 @@
   "Caption.RollingSummary.Status.Processing": "Processing batch",
   "Caption.RollingSummary.Status.Paused": "Paused",
   "Caption.RollingSummary.Status.Error": "Error",
-  "Caption.RollingSummary.Status.Reviewing": "AI-generated / Unreviewed"
+  "Caption.RollingSummary.Status.Reviewing": "AI-generated / Unreviewed",
+  "Caption.RollingSummary.OpenOverlay": "Open Floating Summary",
+  "Caption.RollingSummary.OpenFullReview": "Open Full Review",
+  "Caption.RollingSummary.Overlay.Title": "Rolling Summary",
+  "Caption.RollingSummary.Overlay.Empty": "No batches yet. Start rolling summary and wait for the first processed batch.",
+  "Caption.RollingSummary.Overlay.BatchHeader": "Batch {0} · Updated {1}",
+  "Caption.RollingSummary.Overlay.Topmost": "Always on top",
+  "Caption.RollingSummary.Overlay.Collapse": "Collapse",
+  "Caption.RollingSummary.Overlay.Close": "Close",
+  "Caption.RollingSummary.Overlay.Saved": "Saved to History"
 }

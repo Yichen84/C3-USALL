@@ -220,6 +220,10 @@ namespace LiveCaptionsTranslator.models
                     "OverlayWindow", string.Format(System.Globalization.CultureInfo.InvariantCulture,
                         "{0}, {1}, {2}, {3}", (screenWidth - 650) / 2, screenHeight * 5 / 6 - 135, 650, 135)
                 },
+                {
+                    "RollingSummaryOverlayWindow", string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                        "{0}, {1}, {2}, {3}", (screenWidth - 390) / 2, Math.Max(20, screenHeight / 2 - 310), 390, 620)
+                },
             };
 
             configs = new Dictionary<string, List<TranslateAPIConfig>>

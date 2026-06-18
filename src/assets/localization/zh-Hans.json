@@ -308,5 +308,14 @@
   "Caption.RollingSummary.Status.Processing": "处理批次中",
   "Caption.RollingSummary.Status.Paused": "已暂停",
   "Caption.RollingSummary.Status.Error": "错误",
-  "Caption.RollingSummary.Status.Reviewing": "AI 生成 / 未确认"
+  "Caption.RollingSummary.Status.Reviewing": "AI 生成 / 未确认",
+  "Caption.RollingSummary.OpenOverlay": "打开浮动摘要",
+  "Caption.RollingSummary.OpenFullReview": "打开完整查看",
+  "Caption.RollingSummary.Overlay.Title": "滚动摘要",
+  "Caption.RollingSummary.Overlay.Empty": "还没有批次。请启动滚动摘要，并等待第一批处理完成。",
+  "Caption.RollingSummary.Overlay.BatchHeader": "第 {0} 批 · 更新时间 {1}",
+  "Caption.RollingSummary.Overlay.Topmost": "置顶",
+  "Caption.RollingSummary.Overlay.Collapse": "折叠",
+  "Caption.RollingSummary.Overlay.Close": "关闭",
+  "Caption.RollingSummary.Overlay.Saved": "已保存到 History"
 }

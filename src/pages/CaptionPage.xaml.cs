@@ -21,7 +21,11 @@ namespace LiveCaptionsTranslator
         private readonly DispatcherTimer rollingSummaryTimer = new();
         private CancellationTokenSource? rollingSummaryCancellation;
         private RollingSummaryOutcome? currentRollingOutcome;
+        private readonly List<RollingSummaryOutcome> rollingSummaryOutcomes = [];
+        private string rollingSummaryDetail = string.Empty;
         private bool rollingSummarySaved;
+
+        public event EventHandler<RollingSummaryDisplayState>? RollingSummaryStateChanged;
 
         public CaptionPage()
         {
@@ -34,12 +38,14 @@ namespace LiveCaptionsTranslator
             Loaded += (s, e) =>
             {
                 AutoHeight();
-                (App.Current.MainWindow as MainWindow).CaptionLogButton.Visibility = Visibility.Visible;
+                if (App.Current.MainWindow is MainWindow mainWindow)
+                    mainWindow.CaptionLogButton.Visibility = Visibility.Visible;
                 Translator.Caption.PropertyChanged += TranslatedChanged;
             };
             Unloaded += (s, e) =>
             {
-                (App.Current.MainWindow as MainWindow).CaptionLogButton.Visibility = Visibility.Collapsed;
+                if (App.Current.MainWindow is MainWindow mainWindow)
+                    mainWindow.CaptionLogButton.Visibility = Visibility.Collapsed;
                 Translator.Caption.PropertyChanged -= TranslatedChanged;
                 StopRollingTimer();
             };
@@ -68,6 +74,7 @@ namespace LiveCaptionsTranslator
             RollingProcessNowButton.Content = AppLocalizationService.T("Caption.RollingSummary.ProcessNow");
             RollingSaveButton.Content = AppLocalizationService.T("Caption.RollingSummary.SaveConfirmedSummary");
             RollingClearButton.Content = AppLocalizationService.T("Caption.RollingSummary.ClearTemporaryContext");
+            RollingOpenOverlayButton.Content = AppLocalizationService.T("Caption.RollingSummary.OpenOverlay");
             RollingKeyPointsHeaderText.Text = AppLocalizationService.T("Caption.RollingSummary.KeyPoints");
             RollingActionsHeaderText.Text = AppLocalizationService.T("Caption.RollingSummary.NewActions");
             RollingDatesHeaderText.Text = AppLocalizationService.T("Caption.RollingSummary.DatesAndDeadlines");
@@ -107,6 +114,47 @@ namespace LiveCaptionsTranslator
 
         private void RollingStartButton_Click(object sender, RoutedEventArgs e)
         {
+            StartRollingSummary();
+        }
+
+        private void RollingPauseButton_Click(object sender, RoutedEventArgs e)
+        {
+            PauseRollingSummary();
+        }
+
+        private void RollingResumeButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResumeRollingSummary();
+        }
+
+        private void RollingStopButton_Click(object sender, RoutedEventArgs e)
+        {
+            StopRollingSummary();
+        }
+
+        private async void RollingProcessNowButton_Click(object sender, RoutedEventArgs e)
+        {
+            await ProcessRollingSummaryNowAsync();
+        }
+
+        private async void RollingSaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            await SaveRollingSummaryAsync();
+        }
+
+        private void RollingClearButton_Click(object sender, RoutedEventArgs e)
+        {
+            ClearRollingSummaryTemporaryContext();
+        }
+
+        private void RollingOpenOverlayButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (App.Current.MainWindow is MainWindow mainWindow)
+                mainWindow.ShowRollingSummaryOverlayWindow();
+        }
+
+        public void StartRollingSummary()
+        {
             rollingSummaryService.Start();
             rollingSummarySaved = false;
             StartRollingTimer();
@@ -114,21 +162,21 @@ namespace LiveCaptionsTranslator
             AutoHeight();
         }
 
-        private void RollingPauseButton_Click(object sender, RoutedEventArgs e)
+        public void PauseRollingSummary()
         {
             rollingSummaryService.Pause();
             StopRollingTimer();
             RenderRollingSummaryState(AppLocalizationService.T("Caption.RollingSummary.PausedCollecting"));
         }
 
-        private void RollingResumeButton_Click(object sender, RoutedEventArgs e)
+        public void ResumeRollingSummary()
         {
             rollingSummaryService.Resume();
             StartRollingTimer();
             RenderRollingSummaryState(AppLocalizationService.T("Caption.RollingSummary.CollectingCaptions"));
         }
 
-        private void RollingStopButton_Click(object sender, RoutedEventArgs e)
+        public void StopRollingSummary()
         {
             StopRollingTimer();
             rollingSummaryService.Stop();
@@ -136,12 +184,12 @@ namespace LiveCaptionsTranslator
             RenderRollingSummaryState(AppLocalizationService.T("Caption.RollingSummary.StoppedDetail"));
         }
 
-        private async void RollingProcessNowButton_Click(object sender, RoutedEventArgs e)
+        public Task ProcessRollingSummaryNowAsync()
         {
-            await ProcessRollingSummaryBatchAsync(isManual: true);
+            return ProcessRollingSummaryBatchAsync(isManual: true);
         }
 
-        private async void RollingSaveButton_Click(object sender, RoutedEventArgs e)
+        public async Task SaveRollingSummaryAsync()
         {
             if (currentRollingOutcome == null || rollingSummarySaved)
                 return;
@@ -172,12 +220,13 @@ namespace LiveCaptionsTranslator
             }
         }
 
-        private void RollingClearButton_Click(object sender, RoutedEventArgs e)
+        public void ClearRollingSummaryTemporaryContext()
         {
             rollingSummaryCancellation?.Cancel();
             StopRollingTimer();
             rollingSummaryService.ClearTemporaryContext();
             currentRollingOutcome = null;
+            rollingSummaryOutcomes.Clear();
             rollingSummarySaved = false;
             RenderRollingSummaryState(AppLocalizationService.T("Caption.RollingSummary.TemporaryContextCleared"));
             AutoHeight();
@@ -189,7 +238,9 @@ namespace LiveCaptionsTranslator
             StopRollingTimer();
             rollingSummaryService.ClearTemporaryContext();
             currentRollingOutcome = null;
+            rollingSummaryOutcomes.Clear();
             rollingSummarySaved = false;
+            NotifyRollingSummaryStateChanged();
         }
 
         private async void RollingSummaryTimer_Tick(object? sender, EventArgs e)
@@ -218,6 +269,7 @@ namespace LiveCaptionsTranslator
                     rollingSummaryCancellation.Token);
 
                 currentRollingOutcome = outcome;
+                rollingSummaryOutcomes.Add(outcome);
                 rollingSummarySaved = false;
                 RenderRollingSummaryOutcome(outcome);
             }
@@ -305,6 +357,7 @@ namespace LiveCaptionsTranslator
 
         private void RenderRollingSummaryState(string detail = "")
         {
+            rollingSummaryDetail = detail;
             var status = rollingSummaryService.Status;
             RollingSummaryStatusText.Text = AppLocalizationService.T("Caption.RollingSummary.Status." + status);
             if (!string.IsNullOrWhiteSpace(detail))
@@ -322,6 +375,7 @@ namespace LiveCaptionsTranslator
             RollingSummaryProviderBox.IsEnabled = !isProcessing;
             RollingSummaryOutputLanguageBox.IsEnabled = !isProcessing;
             RollingSummaryIntervalBox.IsEnabled = !isProcessing;
+            RollingOpenOverlayButton.IsEnabled = !isProcessing;
 
             if (currentRollingOutcome == null)
             {
@@ -332,6 +386,41 @@ namespace LiveCaptionsTranslator
                 RollingDatesText.Text = FormatBulletList([]);
                 RollingWarningsText.Text = FormatBulletList([]);
                 RollingUnresolvedText.Text = FormatBulletList([]);
+            }
+
+            NotifyRollingSummaryStateChanged();
+        }
+
+        public RollingSummaryDisplayState GetRollingSummaryDisplayState()
+        {
+            return new RollingSummaryDisplayState
+            {
+                Status = rollingSummaryService.Status,
+                Detail = rollingSummaryDetail,
+                IsProcessing = rollingSummaryService.IsProcessing,
+                IsRunning = rollingSummaryService.IsRunning,
+                IsPaused = rollingSummaryService.IsPaused,
+                CanSave = currentRollingOutcome != null && !rollingSummarySaved && !rollingSummaryService.IsProcessing,
+                IsSaved = rollingSummarySaved,
+                Outcomes = rollingSummaryOutcomes.ToList()
+            };
+        }
+
+        private void NotifyRollingSummaryStateChanged()
+        {
+            RollingSummaryStateChanged?.Invoke(this, GetRollingSummaryDisplayState());
+        }
+
+        public void OpenRollingSummaryFullReview()
+        {
+            if (App.Current.MainWindow is MainWindow mainWindow)
+            {
+                if (mainWindow.WindowState == WindowState.Minimized)
+                    mainWindow.WindowState = WindowState.Normal;
+                if (!mainWindow.IsVisible)
+                    mainWindow.Show();
+                mainWindow.RootNavigation.Navigate(typeof(CaptionPage));
+                mainWindow.Activate();
             }
         }
 
@@ -419,16 +508,19 @@ namespace LiveCaptionsTranslator
 
         public void AutoHeight()
         {
+            if (App.Current.MainWindow is not MainWindow mainWindow)
+                return;
+
             if (rollingSummaryService.IsRunning || currentRollingOutcome != null)
-                (App.Current.MainWindow as MainWindow).AutoHeightAdjust(minHeight: 720, maxHeight: 900);
+                mainWindow.AutoHeightAdjust(minHeight: 720, maxHeight: 900);
             else if (Translator.Setting.MainWindow.CaptionLogEnabled)
-                (App.Current.MainWindow as MainWindow).AutoHeightAdjust(
+                mainWindow.AutoHeightAdjust(
                     minHeight: CARD_HEIGHT * (Translator.Setting.DisplaySentences + 1),
                     maxHeight: CARD_HEIGHT * (Translator.Setting.DisplaySentences + 1));
             else
-                (App.Current.MainWindow as MainWindow).AutoHeightAdjust(
-                    minHeight: (int)App.Current.MainWindow.MinHeight,
-                    maxHeight: (int)App.Current.MainWindow.MinHeight);
+                mainWindow.AutoHeightAdjust(
+                    minHeight: (int)mainWindow.MinHeight,
+                    maxHeight: (int)mainWindow.MinHeight);
         }
     }
 }
