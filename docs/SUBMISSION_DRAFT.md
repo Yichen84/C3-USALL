@@ -36,23 +36,27 @@ ClearBridge converts pasted notice text into:
 
 Phase 3 adds image and screen input. After OCR, users review and edit the extracted text, then choose ordinary translation, a plain summary, or ClearBridge structured action analysis.
 
+Phase 4 adds manual caption-range analysis. After a live caption session, users can analyze all captions or only a selected sentence range, up to 400 sentences, and turn spoken content into a source-backed action plan.
+
 ## How It Works
 
-1. User pastes a notice, captures a screen region, or uploads an image.
+1. User pastes a notice, captures a screen region, uploads an image, or collects real-time captions.
 2. For image/screen input, Local OCR extracts text on device by default.
 3. User reviews and edits OCR text before any follow-up action.
 4. User chooses Translate, Summarize, or ClearBridge Analyze.
-5. ClearBridge structured analysis returns a source-backed action plan.
-6. User can copy the summary or action plan.
-7. Result is saved to local History with feature type metadata.
-8. User can choose the app UI language between English, Simplified Chinese, and Arabic; UI language changes are applied after restart.
-9. UI language remains independent from the analysis output language.
+5. For captions, user chooses All Captions or a sentence range before clicking Analyze.
+6. ClearBridge structured analysis returns a source-backed action plan.
+7. User can copy the summary or action plan.
+8. Result is saved to local History with feature type metadata.
+9. User can choose the app UI language between English, Simplified Chinese, and Arabic; UI language changes are applied after restart.
+10. UI language remains independent from the analysis output language.
 
 ## AI Use
 
 - Optional OpenAI-compatible runtime provider for structured analysis.
 - Optional OpenAI-compatible runtime provider for AI OCR after explicit user confirmation.
 - Optional OpenAI-compatible runtime provider for plain summary after the user clicks Summarize.
+- Optional OpenAI-compatible runtime provider for user-selected caption range analysis.
 - Fixed Mock Provider for demos, no-key use, CI stability, and network fallback.
 - Codex assisted with implementation and documentation.
 
@@ -64,6 +68,9 @@ Phase 3 adds image and screen input. After OCR, users review and edit the extrac
 - Medical, legal, government eligibility, and safety topics do not replace professional advice.
 - Mock Mode is clearly labeled.
 - OCR stops at editable review text and does not automatically translate, summarize, or analyze.
+- Caption analysis is manual: users choose all captions or a range and explicitly click Analyze.
+- Caption analysis is limited to 400 selected sentences and never silently truncates.
+- Caption results are AI-generated and should be reviewed before saving.
 - AI OCR requires explicit confirmation before sending images to a cloud provider.
 - Raw images are not saved to History.
 
@@ -76,6 +83,7 @@ Phase 3 adds image and screen input. After OCR, users review and edit the extrac
 - Optional OpenAI-compatible chat completions API.
 - Windows OCR API for local OCR.
 - Windows Forms overlay for one-time screen region selection.
+- Current-session caption buffer and range selector for manual ClearBridge caption analysis.
 
 ## Open-source Attribution
 
@@ -97,6 +105,8 @@ Built on top of LiveCaptions Translator by SakiRinn and contributors. The upstre
 - Local Windows OCR and optional AI OCR.
 - OCR Review with three independent actions: Translate, Summarize, and ClearBridge Analyze.
 - OCR History classifications for OCR Translation, OCR Summary, and ClearBridge OCR.
+- Manual ClearBridge caption analysis with All Captions and Sentence Range scopes.
+- 400-sentence guardrail, immutable caption snapshot, conservative duplicate handling, and `ClearBridge Caption Analysis` History classification.
 - Restart-required UI language selection for stable English, Simplified Chinese, and Arabic startup.
 - Hackathon documentation and disclosure files.
 
@@ -108,6 +118,7 @@ Built on top of LiveCaptions Translator by SakiRinn and contributors. The upstre
 - Avoiding unstable runtime UI hot-switching in WPF while still supporting persisted multilingual startup.
 - Separating OCR providers from post-OCR text providers so ClearBridge does not replace ordinary translation or summary.
 - Keeping image handling private by default while still supporting optional AI OCR.
+- Adding caption analysis without rewriting the live caption capture pipeline or automatically sending speech-derived text to a provider.
 
 ## Accomplishments
 
@@ -118,6 +129,8 @@ Built on top of LiveCaptions Translator by SakiRinn and contributors. The upstre
 
 - PDF support.
 - More complete OCR DPI and dual-monitor validation.
+- Persisted caption-session browser beyond current-session analysis.
+- Automatic rolling caption summary as a later phase, with explicit user controls.
 - OCR accuracy improvements for low-quality and Arabic images.
 - More complete professional localization review.
 - Reminder and calendar integrations with explicit user approval.
@@ -140,6 +153,8 @@ To be completed by the team with real names, roles, and evidence. Do not invent 
 8. Show the UI language selector and the restart-required message.
 9. Restart into Arabic UI if time allows.
 10. Show that UI language and ClearBridge output language are independent, for example Arabic UI with English output.
+11. Switch to Caption, collect or simulate captions, then click Analyze Captions with ClearBridge.
+12. Show All Captions versus Sentence Range, the 400-sentence limit, preview, and a ClearBridge caption analysis result.
 
 ## Repository Link
 

@@ -110,6 +110,7 @@ namespace LiveCaptionsTranslator
             {
                 currentPage = 1;
                 await SQLiteHistoryLogger.ClearHistory();
+                Translator.Caption.ClearAnalysisSentences();
                 await LoadHistory();
             }
         }

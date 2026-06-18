@@ -33,6 +33,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Margin="0,0,0,12">
@@ -75,7 +76,117 @@
             </UniformGrid>
 
             <Border
+                x:Name="CaptionAnalysisCard"
                 Grid.Row="2"
+                Margin="0,0,0,12"
+                Padding="12"
+                BorderBrush="#22000000"
+                BorderThickness="1"
+                CornerRadius="6"
+                Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock
+                        x:Name="CaptionAnalysisHeaderText"
+                        FontWeight="SemiBold" />
+                    <TextBlock
+                        x:Name="CaptionRecognitionWarningText"
+                        Margin="0,6,0,0"
+                        Opacity="0.75"
+                        TextWrapping="Wrap" />
+
+                    <WrapPanel Margin="0,10,0,0">
+                        <TextBlock
+                            x:Name="CaptionScopeLabel"
+                            Margin="0,4,12,8"
+                            FontWeight="SemiBold" />
+                        <RadioButton
+                            x:Name="CaptionAllRadio"
+                            Margin="0,4,12,8"
+                            Checked="CaptionScope_Checked" />
+                        <RadioButton
+                            x:Name="CaptionRangeRadio"
+                            Margin="0,4,16,8"
+                            Checked="CaptionScope_Checked" />
+                        <TextBlock
+                            x:Name="CaptionFromLabel"
+                            Margin="0,4,6,8" />
+                        <TextBox
+                            x:Name="CaptionFromBox"
+                            Width="72"
+                            MinHeight="28"
+                            Margin="0,0,10,8"
+                            FlowDirection="LeftToRight"
+                            TextChanged="CaptionRangeBox_TextChanged" />
+                        <TextBlock
+                            x:Name="CaptionToLabel"
+                            Margin="0,4,6,8" />
+                        <TextBox
+                            x:Name="CaptionToBox"
+                            Width="72"
+                            MinHeight="28"
+                            Margin="0,0,10,8"
+                            FlowDirection="LeftToRight"
+                            TextChanged="CaptionRangeBox_TextChanged" />
+                    </WrapPanel>
+
+                    <WrapPanel Margin="0,2,0,0">
+                        <TextBlock
+                            x:Name="CaptionTotalText"
+                            Margin="0,0,16,6" />
+                        <TextBlock
+                            x:Name="CaptionSelectedRangeText"
+                            Margin="0,0,16,6" />
+                        <TextBlock
+                            x:Name="CaptionSelectedCountText"
+                            Margin="0,0,16,6" />
+                        <TextBlock
+                            x:Name="CaptionLimitText"
+                            Margin="0,0,0,6"
+                            FontWeight="SemiBold"
+                            TextWrapping="Wrap" />
+                    </WrapPanel>
+
+                    <TextBlock
+                        x:Name="CaptionPreviewHeaderText"
+                        Margin="0,10,0,4"
+                        FontWeight="SemiBold" />
+                    <Border
+                        Padding="8"
+                        BorderBrush="#16000000"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <TextBlock
+                            x:Name="CaptionPreviewText"
+                            MaxHeight="140"
+                            FlowDirection="LeftToRight"
+                            TextWrapping="Wrap" />
+                    </Border>
+
+                    <StackPanel
+                        Margin="0,10,0,0"
+                        Orientation="Horizontal">
+                        <Button
+                            x:Name="CaptionAnalyzeButton"
+                            MinWidth="150"
+                            Margin="0,0,8,0"
+                            FontWeight="SemiBold"
+                            Click="CaptionAnalyzeButton_Click" />
+                        <Button
+                            x:Name="CaptionCancelButton"
+                            MinWidth="80"
+                            Margin="0,0,8,0"
+                            Click="CaptionCancelButton_Click" />
+                        <Button
+                            x:Name="CaptionResetRangeButton"
+                            MinWidth="110"
+                            Click="CaptionResetRangeButton_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border
+                x:Name="OcrToolsCard"
+                Grid.Row="3"
                 Margin="0,0,0,12"
                 Padding="12"
                 BorderBrush="#22000000"
@@ -230,7 +341,7 @@
 
             <Border
                 x:Name="TextInputCard"
-                Grid.Row="3"
+                Grid.Row="4"
                 Margin="0,0,0,12"
                 Padding="12"
                 BorderBrush="#22000000"
@@ -288,7 +399,7 @@
             </Border>
 
             <Border
-                Grid.Row="4"
+                Grid.Row="5"
                 Margin="0,0,0,12"
                 Padding="10"
                 BorderBrush="#22000000"
@@ -308,7 +419,7 @@
             <StackPanel
                 x:Name="TranslationResultPanel"
                 Background="Transparent"
-                Grid.Row="5"
+                Grid.Row="6"
                 Visibility="Collapsed">
                 <Border
                     Margin="0,0,0,12"
@@ -347,7 +458,7 @@
             <StackPanel
                 x:Name="SummaryResultPanel"
                 Background="Transparent"
-                Grid.Row="5"
+                Grid.Row="6"
                 Visibility="Collapsed">
                 <Border
                     Margin="0,0,0,12"
@@ -386,7 +497,7 @@
             <StackPanel
                 x:Name="ResultPanel"
                 Background="Transparent"
-                Grid.Row="5"
+                Grid.Row="6"
                 Visibility="Collapsed">
                 <Border
                     x:Name="SummaryCard"

@@ -18,6 +18,14 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
+        private readonly CrisisActionPromptMode promptMode;
+
+        public OpenAiCrisisActionAnalysisProvider(
+            CrisisActionPromptMode promptMode = CrisisActionPromptMode.Notice)
+        {
+            this.promptMode = promptMode;
+        }
+
         public string Name => "OpenAI-compatible";
 
         public async Task<CrisisActionAnalysisResult> AnalyzeAsync(
@@ -35,7 +43,7 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             var responseText = string.Empty;
             try
             {
-                var response = await SendRequestAsync(config!, sourceText, outputLanguage, timeoutCts.Token);
+                var response = await SendRequestAsync(config!, sourceText, outputLanguage, promptMode, timeoutCts.Token);
                 responseText = await response.Content.ReadAsStringAsync(timeoutCts.Token);
 
                 if (!response.IsSuccessStatusCode)
@@ -81,8 +89,16 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             OpenAIConfig config,
             string sourceText,
             string outputLanguage,
+            CrisisActionPromptMode promptMode,
             CancellationToken cancellationToken)
         {
+            var systemPrompt = promptMode == CrisisActionPromptMode.CaptionTranscript
+                ? CrisisActionPromptBuilder.BuildCaptionSystemPrompt(outputLanguage)
+                : CrisisActionPromptBuilder.BuildSystemPrompt(outputLanguage);
+            var userPrompt = promptMode == CrisisActionPromptMode.CaptionTranscript
+                ? CrisisActionPromptBuilder.BuildCaptionUserPrompt(sourceText)
+                : CrisisActionPromptBuilder.BuildUserPrompt(sourceText);
+
             var requestData = new
             {
                 model = config.ModelName,
@@ -90,8 +106,8 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 response_format = new { type = "json_object" },
                 messages = new[]
                 {
-                    new { role = "system", content = CrisisActionPromptBuilder.BuildSystemPrompt(outputLanguage) },
-                    new { role = "user", content = CrisisActionPromptBuilder.BuildUserPrompt(sourceText) }
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user", content = userPrompt }
                 }
             };
 

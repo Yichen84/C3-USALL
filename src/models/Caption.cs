@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 
+using LiveCaptionsTranslator.models.ClearBridge;
 using LiveCaptionsTranslator.utils;
 
 namespace LiveCaptionsTranslator.models
@@ -18,6 +19,8 @@ namespace LiveCaptionsTranslator.models
         private string overlayOriginalCaption = " ";
         private string overlayCurrentTranslation = " ";
         private string overlayNoticePrefix = " ";
+        private readonly object analysisSentencesLock = new();
+        private readonly List<CaptionAnalysisSentence> analysisSentences = new();
 
         public string OriginalCaption { get; set; } = string.Empty;
         public string TranslatedCaption { get; set; } = string.Empty;
@@ -29,6 +32,17 @@ namespace LiveCaptionsTranslator.models
 
         public IEnumerable<TranslationHistoryEntry> DisplayLogCards =>
             GetPreviousContexts(Translator.Setting.DisplaySentences).Reverse();
+
+        public int AnalysisSentenceCount
+        {
+            get
+            {
+                lock (analysisSentencesLock)
+                {
+                    return analysisSentences.Count;
+                }
+            }
+        }
 
         public string DisplayOriginalCaption
         {
@@ -134,6 +148,72 @@ namespace LiveCaptionsTranslator.models
                 .Where(entry => entry != null && string.CompareOrdinal(entry.TranslatedText, "N/A") != 0 &&
                                 !entry.TranslatedText.Contains("[ERROR]") &&
                                 !entry.TranslatedText.Contains("[WARNING]"));
+        }
+
+        public void AppendAnalysisSentence(TranslationHistoryEntry entry)
+        {
+            if (entry == null || string.IsNullOrWhiteSpace(entry.SourceText))
+                return;
+
+            if (entry.SourceText.Contains("[ERROR]") ||
+                entry.SourceText.Contains("[WARNING]") ||
+                entry.TranslatedText.Contains("[ERROR]") ||
+                entry.TranslatedText.Contains("[WARNING]"))
+            {
+                return;
+            }
+
+            lock (analysisSentencesLock)
+            {
+                analysisSentences.Add(new CaptionAnalysisSentence
+                {
+                    Number = analysisSentences.Count + 1,
+                    SourceText = entry.SourceText.Trim(),
+                    TranslatedText = entry.TranslatedText,
+                    Timestamp = entry.TimestampFull
+                });
+            }
+
+            OnPropertyChanged(nameof(AnalysisSentenceCount));
+        }
+
+        public void RemoveLastAnalysisSentence()
+        {
+            lock (analysisSentencesLock)
+            {
+                if (analysisSentences.Count == 0)
+                    return;
+
+                analysisSentences.RemoveAt(analysisSentences.Count - 1);
+            }
+
+            OnPropertyChanged(nameof(AnalysisSentenceCount));
+        }
+
+        public void ClearAnalysisSentences()
+        {
+            lock (analysisSentencesLock)
+            {
+                analysisSentences.Clear();
+            }
+
+            OnPropertyChanged(nameof(AnalysisSentenceCount));
+        }
+
+        public IReadOnlyList<CaptionAnalysisSentence> GetAnalysisSentencesSnapshot()
+        {
+            lock (analysisSentencesLock)
+            {
+                return analysisSentences
+                    .Select(sentence => new CaptionAnalysisSentence
+                    {
+                        Number = sentence.Number,
+                        SourceText = sentence.SourceText,
+                        TranslatedText = sentence.TranslatedText,
+                        Timestamp = sentence.Timestamp
+                    })
+                    .ToList();
+            }
         }
 
         public void OnPropertyChanged([CallerMemberName] string propName = "")

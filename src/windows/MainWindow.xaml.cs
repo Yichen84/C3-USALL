@@ -5,6 +5,7 @@ using System.Windows.Interop;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
+using LiveCaptionsTranslator.models.ClearBridge;
 using LiveCaptionsTranslator.services.Localization;
 using LiveCaptionsTranslator.services.Ocr;
 using LiveCaptionsTranslator.utils;
@@ -305,6 +306,13 @@ namespace LiveCaptionsTranslator
                 inputType,
                 confirmedText,
                 outcome);
+        }
+
+        public async Task OpenClearBridgeCaptionAnalysisAsync(
+            IReadOnlyList<CaptionAnalysisSentence> sentences)
+        {
+            var page = await NavigateToClearBridgePageAsync();
+            page.LoadCaptionAnalysis(sentences);
         }
 
         private async Task<ClearBridgePage> NavigateToClearBridgePageAsync()

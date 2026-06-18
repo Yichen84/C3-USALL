@@ -351,3 +351,41 @@ This document separates upstream functionality from hackathon work. Do not claim
   - History distinguishes `OCR Translation`, `OCR Summary`, and `ClearBridge OCR`.
   - The existing Phase 1 mouse wheel issue is still disclosed as unresolved.
   - Not fully physically validated on all display configurations.
+
+### Phase 4 Manual Caption Range Analysis
+
+- Start date: 2026-06-18
+- Completion date: 2026-06-18
+- Corresponding commits:
+  - `c1b865e` - `feat(captions): add manual ClearBridge caption range analysis`
+- Corresponding files:
+  - `src/models/Caption.cs`
+  - `src/models/ClearBridge/CaptionAnalysisSentence.cs`
+  - `src/models/ClearBridge/CaptionAnalysisRequest.cs`
+  - `src/models/ClearBridge/ClearBridgeInputType.cs`
+  - `src/services/ClearBridge/CaptionAnalysisPreprocessor.cs`
+  - `src/services/ClearBridge/CrisisActionAnalysisService.cs`
+  - `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
+  - `src/services/ClearBridge/CrisisActionPromptMode.cs`
+  - `src/services/ClearBridge/MockCaptionCrisisActionAnalysisProvider.cs`
+  - `src/services/ClearBridge/OpenAiCrisisActionAnalysisProvider.cs`
+  - `src/pages/CaptionPage.xaml`
+  - `src/pages/CaptionPage.xaml.cs`
+  - `src/pages/ClearBridgePage.xaml`
+  - `src/pages/ClearBridgePage.xaml.cs`
+  - `src/pages/HistoryPage.xaml.cs`
+  - `src/utils/HistoryLogger.cs`
+  - `src/windows/MainWindow.xaml.cs`
+  - `src/assets/localization/en.json`
+  - `src/assets/localization/zh-Hans.json`
+  - `src/assets/localization/ar.json`
+  - `docs/PHASE4_CAPTION_ANALYSIS_TEST_REPORT.md`
+- User value:
+  - Lets users analyze all captured captions or only the relevant sentence range after a class, meeting, lecture, or spoken notice, avoiding irrelevant openings and repeated speech fragments.
+- AI-assisted development:
+  - Yes. Codex assisted with implementation, validation planning, and documentation.
+- Notes:
+  - This is a manual Human-in-the-Loop analysis flow. Captions are not automatically sent to an AI provider.
+  - A single analysis is limited to 400 selected sentences and will not silently truncate.
+  - The feature records `ClearBridge Caption Analysis` separately from Live Captions, OCR Translation, OCR Summary, and ClearBridge OCR.
+  - Automatic rolling summary is not part of Phase 4.

@@ -33,10 +33,12 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 - Optional runtime provider for ClearBridge structured analysis.
 - Optional runtime provider for Phase 3 AI OCR when the user explicitly chooses AI OCR and confirms image upload.
 - Optional runtime provider for Phase 3 plain OCR summary when the user clicks Summarize.
+- Optional runtime provider for Phase 4 manual caption range analysis after the user chooses a caption scope and clicks Analyze.
 - Uses existing user-configured OpenAI-compatible settings.
 - API key is read from local settings and must not be committed.
 - Prompts ask for strict JSON and source-backed claims.
 - Phase 2 asks the configured model to return analysis fields in the selected competition output language: English, Simplified Chinese, or Arabic.
+- Phase 4 uses a caption-specific prompt that warns the model about speech recognition errors, repeated fragments, incomplete sentences, and speaker examples.
 - `source_evidence.source_text` is instructed to preserve exact source wording instead of translating evidence snippets.
 
 ### Google Translate
@@ -65,17 +67,20 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 - Must be labeled as Mock Mode.
 - Must not be described as real AI output.
 - Phase 2 keeps fixed Mock outputs for the competition-visible languages, English, Simplified Chinese, and Arabic, for the same built-in sample.
+- Phase 4 adds a fixed Mock Caption Analysis provider for no-key caption demos and fallback behavior.
 
 ## Data Sources
 
 - User-pasted notices or messages.
 - User-captured screen regions for Phase 3 OCR.
 - User-uploaded image files for Phase 3 OCR.
+- User-selected real-time caption ranges for Phase 4 manual caption analysis.
 - Built-in demonstration sample:
   - "Due to extreme weather conditions, all outdoor extracurricular activities scheduled after 12:30 PM today are suspended..."
 - No public dataset is used in Phase 1.
 - No public dataset is used in Phase 2.
 - No public dataset is used in Phase 3.
+- No public dataset is used in Phase 4.
 - No automatic web lookup is performed.
 
 ## Privacy
@@ -88,6 +93,8 @@ None recorded for Phase 1 or Phase 2. Add tools here if the team uses them later
 - History stores the pasted source text and generated analysis result locally in SQLite because the user explicitly requested History integration.
 - Phase 3 History stores confirmed OCR text and OCR metadata for OCR Translation, OCR Summary, and ClearBridge OCR records.
 - Phase 3 History does not store raw screenshots, uploaded image files, or Base64 image content.
+- Phase 4 History stores only the selected caption range used for analysis, not captions outside the user's selected scope.
+- Phase 4 diagnostic logging must not store the full caption transcript or full model response.
 - AI OCR requires explicit confirmation before any image is sent to a cloud provider.
 - Mock data is clearly marked as Mock Mode.
 - UI language preference is stored locally in `setting.json` as `UiLanguage`.

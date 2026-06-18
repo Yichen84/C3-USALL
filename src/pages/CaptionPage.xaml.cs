@@ -41,8 +41,29 @@ namespace LiveCaptionsTranslator
         private void ApplyLocalization()
         {
             CaptionRoot.FlowDirection = AppLocalizationService.CurrentFlowDirection;
+            AnalyzeCaptionsButton.Content = AppLocalizationService.T("Caption.AnalyzeCaptions");
+            AnalyzeCaptionsButton.ToolTip = AppLocalizationService.T("Caption.AnalyzeCaptions.ToolTip");
             OriginalCaption.ToolTip = AppLocalizationService.T("Caption.ClickToCopy");
             TranslatedCaption.ToolTip = AppLocalizationService.T("Caption.ClickToCopy");
+        }
+
+        private async void AnalyzeCaptionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var sentences = Translator.Caption.GetAnalysisSentencesSnapshot();
+                if (App.Current.MainWindow is MainWindow mainWindow)
+                    await mainWindow.OpenClearBridgeCaptionAnalysisAsync(sentences);
+            }
+            catch (Exception ex)
+            {
+                SnackbarHost.Show(
+                    AppLocalizationService.T("ClearBridge.Failed"),
+                    ex.Message,
+                    SnackbarType.Error,
+                    timeout: 3,
+                    closeButton: true);
+            }
         }
 
         private async void TextBlock_MouseLeftButtonDown(object sender, RoutedEventArgs e)
