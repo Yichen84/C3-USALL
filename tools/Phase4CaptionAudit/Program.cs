@@ -3,6 +3,8 @@ using LiveCaptionsTranslator.services.ClearBridge;
 
 if (args.Contains("--real-api", StringComparer.OrdinalIgnoreCase))
     return await RealApiValidation.RunAsync(args);
+if (args.Contains("--translation-api", StringComparer.OrdinalIgnoreCase))
+    return await TranslationOpenAiValidation.RunAsync(args);
 
 var tests = new List<(string Name, Func<Task> Test)>
 {

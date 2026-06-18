@@ -49,18 +49,31 @@ namespace LiveCaptionsTranslator.apis
         {
             Timeout = TimeSpan.FromSeconds(8)
         };
-        private static int openai_fallback_index = 0;
 
         public static async Task<string> OpenAI(string text, CancellationToken token = default)
         {
             var config = Translator.Setting["OpenAI"] as OpenAIConfig;
-            string language = OpenAIConfig.SupportedLanguages.TryGetValue(
-                Translator.Setting.TargetLanguage, out var langValue) ? langValue : Translator.Setting.TargetLanguage;
+            if (config == null)
+                return "[ERROR] Translation Failed: OpenAI provider settings were not found.";
+            if (string.IsNullOrWhiteSpace(text))
+                return "[ERROR] Translation Failed: Input is empty.";
+            if (string.IsNullOrWhiteSpace(config.ApiUrl))
+                return "[ERROR] Translation Failed: OpenAI-compatible API URL is missing.";
+            if (string.IsNullOrWhiteSpace(config.ModelName))
+                return "[ERROR] Translation Failed: OpenAI-compatible model name is missing.";
+            if (string.IsNullOrWhiteSpace(config.ApiKey))
+                return "[ERROR] Translation Failed: OpenAI-compatible API key is missing.";
+
+            string language = GetOpenAITranslationLanguageName(Translator.Setting.TargetLanguage);
 
             var messages = new List<BaseLLMConfig.Message>
             {
-                new BaseLLMConfig.Message { role = "system", content = string.Format(Prompt, language) },
-                new BaseLLMConfig.Message { role = "user", content = $"🔤 {text} 🔤" }
+                new BaseLLMConfig.Message
+                {
+                    role = "system",
+                    content = $"Translate the following text into {language}. Return only the translation."
+                },
+                new BaseLLMConfig.Message { role = "user", content = text }
             };
 
             if (Translator.Setting.ContextAware)
@@ -73,7 +86,7 @@ namespace LiveCaptionsTranslator.apis
                     translatedText = RegexPatterns.NoticePrefix().Replace(translatedText, "");
 
                     messages.InsertRange(1, [
-                        new BaseLLMConfig.Message { role = "user", content = $"🔤 {entry.SourceText} 🔤" },
+                        new BaseLLMConfig.Message { role = "user", content = entry.SourceText },
                         new BaseLLMConfig.Message { role = "assistant", content = $"{translatedText}" }
                     ]);
                 }
@@ -83,28 +96,19 @@ namespace LiveCaptionsTranslator.apis
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.ApiKey}");
 
             HttpResponseMessage response;
+            string responseString = string.Empty;
             try
             {
-                while (true)
+                var requestData = new
                 {
-                    var requestData = LLMRequestDataFactory.Create(openai_fallback_index,
-                        config.ModelName, messages, config.Temperature);
-                    string jsonContent = JsonSerializer.Serialize(requestData, requestData.GetType());
-                    var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                    response = await client.PostAsync(TextUtil.NormalizeUrl(config.ApiUrl), content, token);
-                    if (response.StatusCode != HttpStatusCode.BadRequest &&
-                        response.StatusCode != HttpStatusCode.UnprocessableEntity)
-                        break;
-                    Thread.Sleep(15);
-
-                    openai_fallback_index++;
-                    if (openai_fallback_index >= LLMRequestDataFactory.FallbackCount)
-                    {
-                        openai_fallback_index = 0;
-                        break;
-                    }
-                }
+                    model = config.ModelName,
+                    messages,
+                    temperature = config.Temperature
+                };
+                string jsonContent = JsonSerializer.Serialize(requestData);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+                response = await client.PostAsync(TextUtil.NormalizeUrl(config.ApiUrl), content, token);
+                responseString = await response.Content.ReadAsStringAsync(token);
             }
             catch (OperationCanceledException ex)
             {
@@ -120,13 +124,80 @@ namespace LiveCaptionsTranslator.apis
 
             if (response.IsSuccessStatusCode)
             {
-                string responseString = await response.Content.ReadAsStringAsync();
                 var responseObj = JsonSerializer.Deserialize<OpenAIConfig.Response>(responseString);
                 var output = responseObj.choices[0].message.content;
                 return RegexPatterns.ModelThinking().Replace(output, "");
             }
-            else
-                return $"[ERROR] Translation Failed: HTTP Error - {response.StatusCode}";
+
+            return BuildOpenAITranslationError(response.StatusCode, responseString);
+        }
+
+        private static string GetOpenAITranslationLanguageName(string targetLanguage)
+        {
+            return targetLanguage switch
+            {
+                "zh-CN" => "Simplified Chinese",
+                "zh-TW" => "Traditional Chinese",
+                "en-US" or "en-GB" => "English",
+                "ja-JP" => "Japanese",
+                "ko-KR" => "Korean",
+                "fr-FR" => "French",
+                "th-TH" => "Thai",
+                "ru-RU" => "Russian",
+                "es-ES" => "Spanish",
+                "pt-BR" => "Portuguese",
+                "tr-TR" => "Turkish",
+                "ar-SA" => "Arabic",
+                _ when !string.IsNullOrWhiteSpace(targetLanguage) => targetLanguage,
+                _ => "Simplified Chinese"
+            };
+        }
+
+        private static string BuildOpenAITranslationError(HttpStatusCode statusCode, string responseBody)
+        {
+            var safeMessage = "The provider rejected the request.";
+            var errorType = string.Empty;
+            var errorCode = string.Empty;
+
+            try
+            {
+                using var document = JsonDocument.Parse(responseBody);
+                if (document.RootElement.TryGetProperty("error", out var error))
+                {
+                    safeMessage = GetJsonString(error, "message", safeMessage);
+                    errorType = GetJsonString(error, "type", string.Empty);
+                    errorCode = GetJsonString(error, "code", string.Empty);
+                }
+            }
+            catch (JsonException)
+            {
+                if (!string.IsNullOrWhiteSpace(responseBody) && responseBody.Length <= 240)
+                    safeMessage = responseBody;
+            }
+
+            safeMessage = RedactSensitiveText(safeMessage);
+            var details = new List<string>();
+            if (!string.IsNullOrWhiteSpace(errorType))
+                details.Add($"type={RedactSensitiveText(errorType)}");
+            if (!string.IsNullOrWhiteSpace(errorCode))
+                details.Add($"code={RedactSensitiveText(errorCode)}");
+
+            var suffix = details.Count == 0 ? string.Empty : $" ({string.Join(", ", details)})";
+            return $"[ERROR] Translation Failed: OpenAI request failed ({(int)statusCode} {statusCode}): {safeMessage}{suffix}";
+        }
+
+        private static string GetJsonString(JsonElement element, string propertyName, string fallback)
+        {
+            return element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String
+                ? property.GetString() ?? fallback
+                : fallback;
+        }
+
+        private static string RedactSensitiveText(string value)
+        {
+            var redacted = RegexPatterns.OpenAIKey().Replace(value, "[REDACTED_API_KEY]");
+            redacted = RegexPatterns.GoogleApiKey().Replace(redacted, "[REDACTED_API_KEY]");
+            return redacted;
         }
 
         public static async Task<string> Ollama(string text, CancellationToken token = default)

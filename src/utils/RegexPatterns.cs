@@ -40,5 +40,11 @@ namespace LiveCaptionsTranslator.utils
 
         [GeneratedRegex(@"🔤\s*(.+?)\s*🔤")]
         public static partial Regex TargetSentence();
+
+        [GeneratedRegex(@"sk-[A-Za-z0-9_-]{20,}")]
+        public static partial Regex OpenAIKey();
+
+        [GeneratedRegex(@"AIza[0-9A-Za-z_-]{20,}")]
+        public static partial Regex GoogleApiKey();
     }
 }
