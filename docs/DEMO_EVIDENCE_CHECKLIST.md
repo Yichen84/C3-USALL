@@ -93,5 +93,5 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - Caption History: capture `ClearBridge Caption Analysis` as a separate History feature type after saving.
 - Caption auto-processing guardrail: narrate that captions are not automatically sent to providers; the user chooses scope and clicks Analyze.
 - Phase 4 no-API audit: harness passed for range math, 400/401 boundaries, snapshot immutability, conservative deduplication, Mock language outputs, parser errors, and cancellation.
-- Phase 4 real API evidence: pending. Use `docs/PHASE4_MANUAL_API_TEST_CHECKLIST.md` during configured-provider testing; do not present Mock output as real model output.
+- Phase 4 real API evidence: runner passed configured-provider validation for 5-25 range, 120 all, Arabic output, 400 sentences, 401 local block, no-action, ambiguous content, Cancel, network error, and invalid model. Desktop History Save evidence is still pending.
 - Phase 4 display validation: code-level verified; physical desktop validation remains pending for special DPI, multi-monitor, and Arabic layout combinations.

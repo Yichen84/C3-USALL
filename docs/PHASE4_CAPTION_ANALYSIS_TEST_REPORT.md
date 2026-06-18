@@ -70,7 +70,7 @@ Code-level validation:
 
 Harness validation:
 - Added `tools/Phase4CaptionAudit`.
-- `dotnet run --project .\tools\Phase4CaptionAudit\Phase4CaptionAudit.csproj -c Release`: passed 9 checks.
+- `dotnet run --project .\tools\Phase4CaptionAudit\Phase4CaptionAudit.csproj -c Release`: passed 10 checks.
 - Covered inclusive ranges, 1-sentence ranges, 400/401 boundaries, snapshot immutability, deduplication, Mock output in English/Chinese/Arabic, no-action content, ambiguous content, parser fallback behavior, and cancellation.
 
 Error and provider tolerance:
@@ -81,12 +81,49 @@ Error and provider tolerance:
 - Illegal priority: falls back to `medium`.
 - Null actions/evidence: normalized to empty lists.
 - Operation cancellation: surfaced without producing a result.
-- Real provider timeout/network behavior: code-level path reviewed; real API validation is pending because this environment has no API key.
+- Real provider network/invalid-model behavior: validated with controlled in-memory failure settings; no API key was printed or copied.
 
 Regression review:
 - Caption source buffer remains independent from database IDs and uses current-session numbering.
 - OCR, Alt+V quick card, Settings, and existing History feature types were not modified by this audit except for shared build/project exclusion for the test harness.
 - Arabic physical UI validation is still pending for this audit run.
+
+## Real API Validation - 2026-06-18
+
+Configuration:
+- Provider: OpenAI-compatible.
+- Model: `gpt-4.1-mini`.
+- Configuration source: fixed-package `setting.json`.
+- API key exposure: No key printed, logged, copied, committed, or written to docs.
+
+Runner:
+- `tools/Phase4CaptionAudit --real-api`.
+- Synthetic datasets only; no real personal, school, medical, or government data.
+- Full prompts, full generated outputs, Authorization headers, and full captions were not printed.
+- Formal user History was not written by the runner. Desktop Save to History remains pending.
+
+| Test | Output Language | Scope | Input | Status | Latency | Evidence |
+| --- | --- | --- | --- | --- | ---: | --- |
+| Dataset A range 5-25 | English | Range | 21 sentences | Success | 5743 ms | No out-of-range evidence |
+| Dataset B all | Simplified Chinese | All | 120 original / 117 processed | Success | 6798 ms | No out-of-range evidence |
+| Dataset A range 5-25 | Arabic | Range | 21 sentences | Success | 5288 ms | No out-of-range evidence |
+| Dataset C all | English | All | 400 sentences | Success | 11291 ms | No out-of-range evidence |
+| Dataset D all | Local validation | All | 401 sentences | Blocked locally | 0 ms | No provider request |
+| Dataset E no-action | English | All | 12 sentences | Success | 2419 ms | No out-of-range evidence |
+| Dataset F ambiguous | English | All | 8 sentences | Success | 5102 ms | No out-of-range evidence |
+| Cancel | English | All | 120 original / 117 processed | Cancelled | 102 ms | No result saved by runner |
+| Network error | English | Range | Local unreachable endpoint | Failed safely | 0 ms | No settings change |
+| Invalid model | English | Range | Temporary in-memory invalid model | Failed safely | 336 ms | No settings change |
+
+Finding and fix:
+- Initial real-provider run showed that no-action and ambiguous cases could return paraphrased `source_text` values that did not exactly exist in the selected captions.
+- Fixed by strengthening the caption prompt and adding `CrisisActionSourceEvidenceSanitizer`, which removes caption evidence entries whose `source_text` is not an exact substring of the selected transcript.
+- Re-run passed with no out-of-range evidence.
+
+History:
+- Success results were not automatically saved by the runner.
+- Cancel/error/401 paths did not write History.
+- Desktop manual Save verification is still required to inspect `FeatureType = ClearBridge Caption Analysis` and range metadata in the application History UI.
 
 ## History Verification
 
@@ -111,7 +148,7 @@ The compatibility History row should also use:
 - Source evidence prompt requires exact selected-caption wording.
 - No reminders, calendar entries, emails, or automatic decisions are created.
 - No API key, Authorization header, hidden system prompt, image, or Base64 is saved to History.
-- Repository sensitive-pattern scan found an existing tracked Google API key-like string in `src/apis/TranslateAPI.cs`; it was present in `HEAD` before this audit and was not introduced by Phase 4. Treat this as a separate remediation risk before final public submission.
+- Inherited upstream Google credential-like constant in `src/apis/TranslateAPI.cs`; no evidence of user secret exposure. Separate lightweight investigation recommended.
 
 ## Build Verification
 
@@ -131,7 +168,7 @@ The compatibility History row should also use:
 - The 2026-06-18 audit expanded deduplication only for clear consecutive incremental captions; it still avoids aggressive semantic deletion.
 - No automatic rolling summary is implemented.
 - Configured-provider semantic quality requires manual QA with real caption transcripts.
-- Real API validation is pending; use `docs/PHASE4_MANUAL_API_TEST_CHECKLIST.md`.
-- Existing tracked Google API key-like string in `src/apis/TranslateAPI.cs` requires separate review/remediation before final public submission.
+- Real API runner validation passed; desktop Save to History remains pending.
+- Inherited upstream Google credential-like constant in `src/apis/TranslateAPI.cs`; no evidence of user secret exposure. Separate lightweight investigation recommended.
 - Arabic UI and special DPI/display configurations still require physical manual verification.
 - The existing Phase 1 mouse wheel issue over some generated result areas remains a known issue.
