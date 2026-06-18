@@ -19,6 +19,11 @@ Implemented behavior:
 - Cancel or failure does not advance the processed caption cursor.
 - Save Confirmed Summary writes a `ClearBridge Rolling Summary` History record only after user action.
 - Confirmed History does not save full raw caption batches.
+- Added an independent dark translucent `RollingSummaryOverlayWindow` for ongoing summary monitoring outside the Caption page.
+- The overlay shares the same rolling session as the Caption page, so it does not create a second provider request path.
+- The overlay shows batch-by-batch results, supports internal scrolling, and only auto-scrolls to the newest batch when the user is already near the bottom.
+- The overlay remembers position and size through the existing window bounds mechanism; temporary summary content itself is not persisted.
+- The overlay can be dragged, resized, toggled Topmost, collapsed, closed, and reopened.
 
 ## Code-Level Validation
 
@@ -49,6 +54,7 @@ Temporary cache:
 - Compressed narrative is capped to about 2500 characters.
 - Clear Temporary Context and app close clear the in-memory cache.
 - Temporary context is not written to disk by default.
+- The overlay is closed on app shutdown and the shared temporary rolling context is cleared.
 
 Provider safety:
 - OpenAI-compatible rolling summary uses minimal Chat Completions fields: `model`, `temperature`, `response_format`, and `messages`.
@@ -90,6 +96,9 @@ Code-level verified in this pass.
 Physical desktop validation still needed:
 - Start / Pause / Resume / Stop while real captions are entering.
 - Process Now with real captions.
+- Open, drag, resize, collapse, close, and reopen the rolling summary overlay.
+- Verify overlay placement near the realtime caption overlay and saved size/position restore.
+- Verify overlay internal scrolling and no forced auto-scroll while reviewing older batches.
 - Save Confirmed Summary and inspect History UI row.
 - English, Simplified Chinese, and Arabic UI rendering.
 - Long-running timer behavior over several real minutes.
@@ -108,7 +117,7 @@ This pass did not call a paid provider for Phase 5 rolling summary. Mock validat
 
 ## Known Limitations
 
-- Rolling Summary is a Phase 5 MVP panel on the Caption page, not a full persisted session browser.
+- Rolling Summary is a Phase 5 MVP with a Caption page panel and floating overlay, not a full persisted session browser.
 - The interval selector is on the Caption page rather than the full Settings page.
 - AI-generated results are marked unreviewed in status text, but item-level Confirm / Inaccurate / Needs Review controls are not yet implemented as separate per-item buttons.
 - Real API quality and physical desktop behavior need manual validation before final competition packaging.

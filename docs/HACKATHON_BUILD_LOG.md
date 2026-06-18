@@ -956,6 +956,8 @@ Add a user-controlled rolling summary mode for realtime captions using 60/90/120
 - Added Mock and OpenAI-compatible rolling summary providers.
 - Added a strict rolling summary JSON parser and prompt shape.
 - Added a Caption page Rolling Summary panel with Start, Pause, Resume, Stop, Process Now, Save Confirmed Summary, and Clear Temporary Context.
+- Added an independent dark translucent `RollingSummaryOverlayWindow` so users can monitor rolling summaries outside the Caption page.
+- The overlay supports drag, resize, optional Topmost, collapse, close/reopen, internal scrolling, batch-by-batch append, and saved position/size.
 - Added user-visible English, Simplified Chinese, and Arabic strings.
 - Added `ClearBridge Rolling Summary` History classification with confirmed-summary metadata and `TemporaryContextPersisted = 0`.
 - Added `tools/Phase5RollingSummaryAudit` harness.
@@ -966,6 +968,7 @@ Add a user-controlled rolling summary mode for realtime captions using 60/90/120
 - `src/models/ClearBridge/RollingSummaryRequest.cs`
 - `src/models/ClearBridge/RollingSummaryResult.cs`
 - `src/models/ClearBridge/RollingSummaryStatus.cs`
+- `src/models/ClearBridge/RollingSummaryDisplayState.cs`
 - `src/services/ClearBridge/IRollingSummaryProvider.cs`
 - `src/services/ClearBridge/MockRollingSummaryProvider.cs`
 - `src/services/ClearBridge/OpenAiRollingSummaryProvider.cs`
@@ -974,7 +977,11 @@ Add a user-controlled rolling summary mode for realtime captions using 60/90/120
 - `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
 - `src/pages/CaptionPage.xaml`
 - `src/pages/CaptionPage.xaml.cs`
+- `src/windows/RollingSummaryOverlayWindow.xaml`
+- `src/windows/RollingSummaryOverlayWindow.xaml.cs`
 - `src/windows/MainWindow.xaml.cs`
+- `src/models/Setting.cs`
+- `src/utils/WindowHandler.cs`
 - `src/utils/HistoryLogger.cs`
 - `src/assets/localization/en.json`
 - `src/assets/localization/zh-Hans.json`
@@ -994,6 +1001,9 @@ Add a user-controlled rolling summary mode for realtime captions using 60/90/120
 - Used a compressed context cache instead of resending full caption history every batch.
 - Kept temporary context memory-only by default and cleared on app close or explicit Clear Temporary Context.
 - Saved only user-confirmed rolling summaries to History, not full raw caption batches.
+- Implemented the overlay as a second view over the same rolling summary session instead of a second processing pipeline, preventing duplicate provider requests.
+- Reused existing window bounds persistence for overlay position and size while keeping the temporary summary content memory-only.
+- Preserved the user's scroll position when they are reviewing older overlay batches; new batches only auto-scroll when the overlay is already near the bottom.
 
 ### AI Tools Used
 - Codex: implementation, harness creation, documentation updates, and build/test execution.
@@ -1008,11 +1018,13 @@ Add a user-controlled rolling summary mode for realtime captions using 60/90/120
 
 ### Tests Performed
 - `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with 0 errors; existing nullable warnings remain.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed after the overlay addition.
 - `dotnet run --project .\tools\Phase5RollingSummaryAudit\Phase5RollingSummaryAudit.csproj -c Release`: passed 8 checks.
 - Harness covered three-batch context evolution, consume-once cursor behavior, minimum threshold blocking, cancellation rollback, 10-batch cache bounds, Mock English/Simplified Chinese/Arabic, null-field parsing, and invalid JSON handling.
 
 ### Known Limitations
 - Physical desktop validation with real captions remains pending.
+- Physical desktop validation of overlay placement, resize, collapse, and scroll behavior remains pending.
 - Real API semantic quality validation remains pending.
 - Item-level Confirm / Inaccurate / Needs Review controls are not yet separate per-item buttons in this MVP.
 - The interval selector is on the Caption page rather than the full Settings page.
@@ -1020,5 +1032,9 @@ Add a user-controlled rolling summary mode for realtime captions using 60/90/120
 
 ### Git Evidence
 - Branch: `feature/clearbridge-phase5-rolling-summary`
-- Commit hash: pending
-- Commit message: pending
+- Commit hash: `a8e3a2f`, `8d89c3e`, `740e3d6`, `b63b7e1`
+- Commit messages:
+  - `feat(captions): add rolling summary session workflow`
+  - `test(captions): validate Phase 5 rolling summary behavior`
+  - `docs(hackathon): document rolling summary and temporary context`
+  - `feat(captions): add rolling summary overlay window`

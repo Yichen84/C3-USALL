@@ -395,18 +395,27 @@ This document separates upstream functionality from hackathon work. Do not claim
 - Start date: 2026-06-18
 - Completion date: 2026-06-18
 - Corresponding commits:
-  - Pending Phase 5 implementation commit.
+  - `a8e3a2f` - `feat(captions): add rolling summary session workflow`
+  - `8d89c3e` - `test(captions): validate Phase 5 rolling summary behavior`
+  - `740e3d6` - `docs(hackathon): document rolling summary and temporary context`
+  - `b63b7e1` - `feat(captions): add rolling summary overlay window`
 - Corresponding files:
   - `src/models/ClearBridge/RollingContextCache.cs`
   - `src/models/ClearBridge/RollingSummaryRequest.cs`
   - `src/models/ClearBridge/RollingSummaryResult.cs`
   - `src/models/ClearBridge/RollingSummaryStatus.cs`
+  - `src/models/ClearBridge/RollingSummaryDisplayState.cs`
   - `src/services/ClearBridge/RollingSummarySessionService.cs`
   - `src/services/ClearBridge/MockRollingSummaryProvider.cs`
   - `src/services/ClearBridge/OpenAiRollingSummaryProvider.cs`
   - `src/services/ClearBridge/RollingSummaryJsonParser.cs`
   - `src/pages/CaptionPage.xaml`
   - `src/pages/CaptionPage.xaml.cs`
+  - `src/windows/RollingSummaryOverlayWindow.xaml`
+  - `src/windows/RollingSummaryOverlayWindow.xaml.cs`
+  - `src/windows/MainWindow.xaml.cs`
+  - `src/models/Setting.cs`
+  - `src/utils/WindowHandler.cs`
   - `src/utils/HistoryLogger.cs`
   - `tools/Phase5RollingSummaryAudit/`
   - `docs/PHASE5_ROLLING_SUMMARY_TEST_REPORT.md`
@@ -416,6 +425,9 @@ This document separates upstream functionality from hackathon work. Do not claim
   - Yes. Codex assisted with implementation, harness validation, and documentation.
 - Notes:
   - Rolling Summary is default-off and user-controlled.
+  - Rolling Summary can be monitored in either the Caption page panel or a separate dark translucent floating overlay.
+  - The overlay shares the same session and does not duplicate provider calls.
+  - Overlay position and size are remembered; temporary summary content is not persisted.
   - Default batch interval is 90 seconds, with 60 and 120 second options.
   - Temporary raw batches and compressed context are memory-only and cleared on app close.
   - Confirmed History saving does not persist full raw caption batches.
