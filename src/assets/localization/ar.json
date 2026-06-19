@@ -159,6 +159,7 @@
   "ClearBridge.Warnings": "تحذيرات",
   "ClearBridge.UnclearItems": "نقاط غير واضحة",
   "ClearBridge.SourceEvidence": "الدليل من النص",
+  "ClearBridge.ResponsibleAiNotice": "قد يحتوي المحتوى المولد بالذكاء الاصطناعي على أخطاء أو نواقص. راجع دليل المصدر الأصلي وتأكد من التواريخ والأماكن والمستندات والتحذيرات وخطوات العمل قبل التصرف. لا ينفذ ClearBridge إجراءات خارجية نيابة عن المستخدم.",
   "ClearBridge.CopySummary": "نسخ الملخص",
   "ClearBridge.CopyActionPlan": "نسخ خطة العمل",
   "ClearBridge.SaveToHistory": "حفظ في السجل",

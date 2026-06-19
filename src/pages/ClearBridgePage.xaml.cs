@@ -1150,6 +1150,7 @@ namespace LiveCaptionsTranslator
             ResultTitleText.Text = result.Title;
             PriorityText.Text = $"{localizer.T("ClearBridge.Priority")}: {LocalizePriority(result.Priority)}";
             SummaryHeaderText.Text = localizer.T("ClearBridge.SimpleSummary");
+            ResponsibleAiNoticeText.Text = localizer.T("ClearBridge.ResponsibleAiNotice");
             SummaryText.Text = result.Summary;
 
             ImportantPointsList.ItemsSource = BuildStringRows(result.ImportantPoints);
@@ -1287,6 +1288,7 @@ namespace LiveCaptionsTranslator
                 ? localizer.T("ClearBridge.Ocr.ClearBridgeAnalyze")
                 : localizer.T("ClearBridge.Cancel");
             StatusTitleText.Text = localizer.T("ClearBridge.Status");
+            ResponsibleAiNoticeText.Text = localizer.T("ClearBridge.ResponsibleAiNotice");
             ImportantPointsHeaderText.Text = localizer.T("ClearBridge.ImportantPoints");
             WarningsHeaderText.Text = localizer.T("ClearBridge.Warnings");
             ActionsHeaderText.Text = localizer.T("ClearBridge.Actions");

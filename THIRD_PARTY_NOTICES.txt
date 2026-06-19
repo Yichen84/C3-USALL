@@ -1,0 +1,93 @@
+ClearBridge Third-Party Notices
+================================
+
+ClearBridge is a modified derivative project based on the open-source
+LiveCaptions Translator project.
+
+Upstream Project
+----------------
+
+Project: LiveCaptions Translator
+Author / Organization: SakiRinn and contributors
+Repository: https://github.com/SakiRinn/LiveCaptions-Translator
+License: Apache License 2.0
+
+The upstream repository did not include a root NOTICE file in this checkout.
+This file is therefore a ClearBridge third-party notice file, not a fabricated
+upstream NOTICE.
+
+The original Apache License 2.0 text is preserved in the repository root
+LICENSE file. Original copyright, license, and attribution notices that remain
+applicable are preserved where required.
+
+ClearBridge is an independent derivative project created for the USAII Global
+AI Hackathon 2026. The original upstream authors do not endorse, sponsor, or
+maintain ClearBridge unless they separately state otherwise.
+
+ClearBridge Modifications
+-------------------------
+
+The ClearBridge team added or modified substantial functionality, including:
+
+- Structured crisis-to-action analysis.
+- Multilingual English, Simplified Chinese, and Arabic UI/output support.
+- OCR review workflows and OCR quick action card.
+- Manual caption range analysis.
+- Rolling Summary overlay and memory-only temporary context.
+- Human-in-the-loop confirmation and local History categories.
+- Source-evidence validation, test harnesses, and competition documentation.
+
+NuGet and Platform Dependencies
+-------------------------------
+
+The project file references the following package dependencies. License
+information below was read from local NuGet package metadata or package license
+files in this build environment.
+
+- CsvHelper 33.0.1
+  Authors: Josh Close
+  Project: https://joshclose.github.io/CsvHelper/
+  License expression: MS-PL OR Apache-2.0
+
+- Interop.UIAutomationClient 10.19041.0
+  Authors: Roemer
+  Project: https://github.com/Roemer/UIAutomation-Interop
+  License: package LICENSE.txt
+
+- Microsoft.Data.Sqlite 9.0.1 and Microsoft.Data.Sqlite.Core 9.0.1
+  Authors: Microsoft
+  Project: https://docs.microsoft.com/dotnet/standard/data/sqlite/
+  License expression: MIT
+
+- System.Net.Http 4.3.4
+  Authors: Microsoft
+  Project: https://dot.net/
+  License: Microsoft .NET Library license file included in the NuGet package
+
+- System.Text.Json 8.0.5
+  Authors: Microsoft
+  Project: https://dot.net/
+  License expression: MIT
+
+- WPF-UI 4.0.1 and WPF-UI.Abstractions 4.0.1
+  Authors: lepo.co
+  Project: https://github.com/lepoco/wpfui
+  License expression: MIT
+
+Windows OCR and Live Captions
+-----------------------------
+
+ClearBridge uses Windows platform capabilities such as Windows.Media.Ocr and
+Windows Live Captions where available. These platform features are provided by
+Windows and are not redistributed as ClearBridge source code.
+
+AI and External Services
+------------------------
+
+ClearBridge can optionally use user-configured OpenAI-compatible providers,
+translation providers, and cloud OCR providers at runtime. Release packages do
+not include user API keys, authorization headers, setting.json, user databases,
+logs, or raw user data.
+
+Users are responsible for reviewing provider terms and privacy policies before
+sending sensitive content to an online service.
