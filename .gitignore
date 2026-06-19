@@ -373,3 +373,5 @@ translation_history.db-*
 
 # Local manual test builds
 test-build/
+final-package/
+migration-package/

@@ -1097,3 +1097,67 @@ Independently audit Phase 5 rolling summary behavior with synthetic captions, ve
 - Branch: `feature/clearbridge-phase5-rolling-summary`
 - Commit hash: pending
 - Commit message: pending
+
+## 2026-06-19 — Final Code Freeze / Packaging
+
+### Goal
+Freeze the planned ClearBridge/C3-USALL feature set, run final automated regression, create a stable local competition package, and prepare a Rolling Summary migration package for future C3 mainline integration.
+
+### Work Completed
+- Verified `main` at functional baseline `d7d5fe3429435c2f53b5b9a6323a9919883c98d1` with tag `phase5-rolling-summary`.
+- Re-ran restore, format, Release build, Phase 4 audit, Phase 5 audit, and win-x64 self-contained publish.
+- Refreshed the fixed local test package and smoke-launched it.
+- Created the final competition package under `final-package/ClearBridge-USALL-Final`.
+- Created the Rolling Summary migration package and ZIP under `migration-package/RollingSummaryOverlay-C3-Integration`.
+- Added final code freeze, regression, build manifest, and migration package reports.
+- Added `.gitignore` rules for local `final-package/` and `migration-package/` outputs.
+
+### Files Changed
+- `.gitignore`
+- `docs/FINAL_CODE_FREEZE_REPORT.md`
+- `docs/FINAL_REGRESSION_REPORT.md`
+- `docs/FINAL_BUILD_MANIFEST.md`
+- `docs/ROLLING_SUMMARY_MIGRATION_PACKAGE.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+
+### Technical Decisions
+- The functional code baseline remains `d7d5fe3` / `phase5-rolling-summary`; final packaging only adds documentation and ignore rules.
+- No new feature tag was created because no new product functionality was added after Phase 5.
+- Release artifacts and migration artifacts are local ignored outputs, not committed repository content.
+- Real API validation was not re-run during final packaging to avoid unnecessary external calls; previously confirmed synthetic real-provider results are referenced separately from this final smoke pass.
+
+### AI Tools Used
+- Codex: final packaging, audit orchestration, documentation, migration package assembly, and safety checks.
+- ChatGPT: no new separate usage recorded in this pass.
+- Other AI: no new runtime AI calls were made during final packaging.
+
+### External Services / Libraries
+- GitHub: existing `main` and tag state were used; no GitHub Release was created.
+- .NET SDK / WPF: restore, format, build, audit harnesses, and publish.
+- PowerShell packaging utilities: local file copy, SHA-256 generation, and ZIP creation.
+
+### Tests Performed
+- `dotnet restore .\LiveCaptionsTranslator.sln`: passed.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with `0 warnings` and `0 errors`.
+- `dotnet run --project .\tools\Phase4CaptionAudit\Phase4CaptionAudit.csproj -c Release`: passed 10 checks.
+- `dotnet run --project .\tools\Phase5RollingSummaryAudit\Phase5RollingSummaryAudit.csproj -c Release`: passed 15 checks.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed.
+- Fixed package smoke launch: passed.
+- Final package smoke launch: passed.
+- Package security checks confirmed no committed or packaged user personal key, OpenAI/ClearBridge provider key, database, logs, raw captions, or test build directory. One inherited upstream Google-related credential-like constant remains documented as an accepted upstream dependency risk.
+
+### Known Limitations
+- Some long ClearBridge result areas still have unreliable mouse-wheel scrolling; use the right-side ScrollBar.
+- Not every DPI and multi-monitor combination has been fully physically validated.
+- Long real classroom caption streams have not been fully covered end to end.
+- Arabic output from some providers may trigger one strict JSON retry before succeeding.
+- This pass did not re-run paid or external real-provider calls.
+- A Google-related credential-like constant inherited from the upstream base remains present. It was manually reviewed and accepted as an upstream dependency risk; it is not a user personal key and not a ClearBridge/OpenAI-added key.
+
+### Git Evidence
+- Branch: `main`
+- Functional baseline commit: `d7d5fe3429435c2f53b5b9a6323a9919883c98d1`
+- Tag: `phase5-rolling-summary`
+- Commit hash: pending
+- Commit message: `docs(release): record final ClearBridge code freeze`
