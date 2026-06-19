@@ -159,6 +159,7 @@
   "ClearBridge.Warnings": "风险提示",
   "ClearBridge.UnclearItems": "不确定项",
   "ClearBridge.SourceEvidence": "原文依据",
+  "ClearBridge.ResponsibleAiNotice": "AI 生成内容可能存在遗漏或错误。请查看原文证据，并在确认重要日期、地点、文件要求、警告和行动步骤后再采取行动。ClearBridge 不会自动替用户执行外部任务。",
   "ClearBridge.CopySummary": "复制摘要",
   "ClearBridge.CopyActionPlan": "复制行动计划",
   "ClearBridge.SaveToHistory": "保存到 History",

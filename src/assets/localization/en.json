@@ -159,6 +159,7 @@
   "ClearBridge.Warnings": "Warnings",
   "ClearBridge.UnclearItems": "Unclear Items",
   "ClearBridge.SourceEvidence": "Source Evidence",
+  "ClearBridge.ResponsibleAiNotice": "AI-generated content may contain omissions or errors. Review the original source evidence and confirm important dates, locations, document requirements, warnings, and action steps before acting. ClearBridge does not automatically perform external actions for the user.",
   "ClearBridge.CopySummary": "Copy Summary",
   "ClearBridge.CopyActionPlan": "Copy Action Plan",
   "ClearBridge.SaveToHistory": "Save to History",
