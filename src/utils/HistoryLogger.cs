@@ -20,6 +20,7 @@ namespace LiveCaptionsTranslator.utils
         public const string FeatureTypeOcrSummary = "OCR Summary";
         public const string FeatureTypeClearBridgeOcr = "ClearBridge OCR";
         public const string FeatureTypeClearBridgeCaptionAnalysis = "ClearBridge Caption Analysis";
+        public const string FeatureTypeClearBridgeRollingSummary = "ClearBridge Rolling Summary";
         public const string FeatureTypeTranslation = "Translation";
 
         private static SqliteConnection _sharedConnection;
@@ -88,6 +89,12 @@ namespace LiveCaptionsTranslator.utils
             EnsureColumnExists("ClearBridgeHistory", "ProcessedSentenceCount", "INTEGER");
             EnsureColumnExists("ClearBridgeHistory", "SelectedCharacterCount", "INTEGER");
             EnsureColumnExists("ClearBridgeHistory", "UserConfirmed", "INTEGER");
+            EnsureColumnExists("ClearBridgeHistory", "SessionId", "TEXT");
+            EnsureColumnExists("ClearBridgeHistory", "SessionStart", "TEXT");
+            EnsureColumnExists("ClearBridgeHistory", "SessionEnd", "TEXT");
+            EnsureColumnExists("ClearBridgeHistory", "BatchCount", "INTEGER");
+            EnsureColumnExists("ClearBridgeHistory", "ConfirmedActionCount", "INTEGER");
+            EnsureColumnExists("ClearBridgeHistory", "TemporaryContextPersisted", "INTEGER");
         }
 
         private static void NormalizeMissingTranslationFeatureTypes()
@@ -334,6 +341,63 @@ namespace LiveCaptionsTranslator.utils
                 command.Parameters.AddWithValue("@OcrTextEdited", ocrTextEdited ? 1 : 0);
                 await command.ExecuteNonQueryAsync(token);
             }
+        }
+
+        public static async Task LogRollingSummary(
+            string sourceDescription,
+            string resultJson,
+            string summary,
+            string outputLanguage,
+            string providerName,
+            bool isMock,
+            string sessionId,
+            DateTimeOffset sessionStart,
+            DateTimeOffset sessionEnd,
+            int batchCount,
+            int confirmedActionCount,
+            bool userConfirmed,
+            CancellationToken token = default)
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+
+            string insertQuery = @"
+                INSERT INTO ClearBridgeHistory
+                    (Timestamp, SourceText, Summary, Priority, ActionsJson, OutputLanguage, ProviderName, IsMock, FeatureType, ResultJson,
+                     InputType, UserConfirmed, SessionId, SessionStart, SessionEnd, BatchCount, ConfirmedActionCount, TemporaryContextPersisted)
+                VALUES
+                    (@Timestamp, @SourceText, @Summary, @Priority, @ActionsJson, @OutputLanguage, @ProviderName, @IsMock, @FeatureType, @ResultJson,
+                     @InputType, @UserConfirmed, @SessionId, @SessionStart, @SessionEnd, @BatchCount, @ConfirmedActionCount, @TemporaryContextPersisted)";
+
+            using (var command = new SqliteCommand(insertQuery, GetConnection()))
+            {
+                command.Parameters.AddWithValue("@Timestamp", timestamp);
+                command.Parameters.AddWithValue("@SourceText", sourceDescription);
+                command.Parameters.AddWithValue("@Summary", summary);
+                command.Parameters.AddWithValue("@Priority", "unreviewed");
+                command.Parameters.AddWithValue("@ActionsJson", "[]");
+                command.Parameters.AddWithValue("@OutputLanguage", outputLanguage);
+                command.Parameters.AddWithValue("@ProviderName", providerName);
+                command.Parameters.AddWithValue("@IsMock", isMock ? 1 : 0);
+                command.Parameters.AddWithValue("@FeatureType", FeatureTypeClearBridgeRollingSummary);
+                command.Parameters.AddWithValue("@ResultJson", resultJson);
+                command.Parameters.AddWithValue("@InputType", ClearBridgeInputType.CaptionAnalysis.ToString());
+                command.Parameters.AddWithValue("@UserConfirmed", userConfirmed ? 1 : 0);
+                command.Parameters.AddWithValue("@SessionId", sessionId);
+                command.Parameters.AddWithValue("@SessionStart", sessionStart.ToUnixTimeSeconds().ToString());
+                command.Parameters.AddWithValue("@SessionEnd", sessionEnd.ToUnixTimeSeconds().ToString());
+                command.Parameters.AddWithValue("@BatchCount", batchCount);
+                command.Parameters.AddWithValue("@ConfirmedActionCount", confirmedActionCount);
+                command.Parameters.AddWithValue("@TemporaryContextPersisted", 0);
+                await command.ExecuteNonQueryAsync(token);
+            }
+
+            await LogTranslation(
+                sourceDescription,
+                summary,
+                outputLanguage,
+                isMock ? $"{FeatureTypeClearBridgeRollingSummary} (Mock)" : $"{FeatureTypeClearBridgeRollingSummary} ({providerName})",
+                token,
+                FeatureTypeClearBridgeRollingSummary);
         }
 
         private static string FormatClearBridgeSummary(CrisisActionAnalysisResult result)

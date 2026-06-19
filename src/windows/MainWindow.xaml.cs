@@ -17,6 +17,7 @@ namespace LiveCaptionsTranslator
     public partial class MainWindow : FluentWindow
     {
         public OverlayWindow? OverlayWindow { get; set; } = null;
+        public RollingSummaryOverlayWindow? RollingSummaryOverlayWindow { get; set; } = null;
         public bool IsAutoHeight { get; set; } = true;
 
         private HwndSource? hwndSource;
@@ -70,6 +71,9 @@ namespace LiveCaptionsTranslator
 
         private void MainWindow_Closed(object? sender, EventArgs e)
         {
+            CaptionPage.Instance?.ClearRollingSummaryForShutdown();
+            RollingSummaryOverlayWindow?.Close();
+            RollingSummaryOverlayWindow = null;
             UnregisterScreenOcrHotkey();
             hwndSource?.RemoveHook(WndProc);
             hwndSource = null;
@@ -418,6 +422,67 @@ namespace LiveCaptionsTranslator
                 OverlayWindow.Close();
                 OverlayWindow = null;
             }
+        }
+
+        public void ShowRollingSummaryOverlayWindow()
+        {
+            if (RollingSummaryOverlayWindow != null)
+            {
+                if (RollingSummaryOverlayWindow.WindowState == WindowState.Minimized)
+                    RollingSummaryOverlayWindow.WindowState = WindowState.Normal;
+                RollingSummaryOverlayWindow.Activate();
+                return;
+            }
+
+            var overlayWindow = new RollingSummaryOverlayWindow();
+            RollingSummaryOverlayWindow = overlayWindow;
+            overlayWindow.SizeChanged +=
+                (s, e) => WindowHandler.SaveState(overlayWindow, Translator.Setting);
+            overlayWindow.LocationChanged +=
+                (s, e) => WindowHandler.SaveState(overlayWindow, Translator.Setting);
+            overlayWindow.Closed += (s, e) =>
+            {
+                if (ReferenceEquals(RollingSummaryOverlayWindow, s))
+                    RollingSummaryOverlayWindow = null;
+            };
+
+            var savedState = WindowHandler.LoadState(overlayWindow, Translator.Setting);
+            if (savedState.IsEmpty || !IsWindowStateOnScreen(savedState))
+                WindowHandler.RestoreState(overlayWindow, GetDefaultRollingSummaryOverlayBounds());
+            else
+                WindowHandler.RestoreState(overlayWindow, savedState);
+
+            overlayWindow.Show();
+        }
+
+        private Rect GetDefaultRollingSummaryOverlayBounds()
+        {
+            var workArea = SystemParameters.WorkArea;
+            var width = 390.0;
+            var height = Math.Min(620.0, Math.Max(360.0, workArea.Height - 80));
+            var anchor = OverlayWindow != null && OverlayWindow.IsVisible
+                ? new Rect(OverlayWindow.Left, OverlayWindow.Top, OverlayWindow.Width, OverlayWindow.Height)
+                : new Rect(Left, Top, Width, Height);
+
+            var left = anchor.Right + 12;
+            if (left + width > workArea.Right)
+                left = anchor.Left - width - 12;
+            if (left < workArea.Left)
+                left = workArea.Right - width - 20;
+
+            var top = Math.Clamp(anchor.Top, workArea.Top + 20, workArea.Bottom - height - 20);
+            return new Rect(left, top, width, height);
+        }
+
+        private static bool IsWindowStateOnScreen(Rect state)
+        {
+            var workArea = SystemParameters.WorkArea;
+            return state.Width > 100 &&
+                state.Height > 100 &&
+                state.Left < workArea.Right - 80 &&
+                state.Right > workArea.Left + 80 &&
+                state.Top < workArea.Bottom - 80 &&
+                state.Bottom > workArea.Top + 80;
         }
 
         private void LogOnlyButton_Click(object sender, RoutedEventArgs e)

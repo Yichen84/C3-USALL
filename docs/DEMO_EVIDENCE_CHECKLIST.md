@@ -41,6 +41,18 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - [ ] 400-sentence limit message.
 - [ ] ClearBridge Caption Analysis result.
 - [ ] History row with `ClearBridge Caption Analysis`.
+- [ ] Rolling Summary panel on Caption page.
+- [ ] Rolling Summary default Off / Stopped state.
+- [ ] Rolling Summary interval selector showing 60 / 90 / 120 seconds and default 90 seconds.
+- [ ] Rolling Summary Start / Pause / Resume / Stop controls.
+- [ ] Process Now demo without waiting 90 seconds.
+- [ ] Rolling Summary floating overlay next to the realtime caption overlay.
+- [ ] Rolling Summary overlay drag, resize, Topmost toggle, collapse, close/reopen.
+- [ ] Rolling Summary overlay internal scroll with older batches preserved while new batches append.
+- [ ] Rolling Summary AI-generated / Unreviewed status.
+- [ ] Rolling Summary temporary context privacy note.
+- [ ] Save Confirmed Summary and History row with `ClearBridge Rolling Summary`.
+- [ ] Clear Temporary Context behavior.
 - [ ] Long-result demo uses the right-side scrollbar.
 - [ ] Known mouse wheel limitation is disclosed if showing long results.
 
@@ -95,3 +107,8 @@ Use this checklist when collecting screenshots, video clips, and final submissio
 - Phase 4 no-API audit: harness passed for range math, 400/401 boundaries, snapshot immutability, conservative deduplication, Mock language outputs, parser errors, and cancellation.
 - Phase 4 real API evidence: runner passed configured-provider validation for 5-25 range, 120 all, Arabic output, 400 sentences, 401 local block, no-action, ambiguous content, Cancel, network error, and invalid model. Desktop History Save evidence is still pending.
 - Phase 4 display validation: code-level verified; physical desktop validation remains pending for special DPI, multi-monitor, and Arabic layout combinations.
+- Phase 5 Rolling Summary: implemented on the Caption page with Start/Pause/Resume/Stop, Process Now, memory-only compressed context, Mock/OpenAI-compatible provider paths, and confirmed History save.
+- Phase 5 Rolling Summary overlay: implemented as a dark translucent floating window with shared session controls, batch-by-batch display, internal scroll, optional Topmost, collapse, close/reopen, and saved position/size. Temporary content itself is still memory-only.
+- Phase 5 harness: passed 15 checks, including three-batch cache evolution, superseded fact correction, consume-once behavior, tiny-batch blocking, cancellation rollback, provider failure rollback, concurrent request rejection, pause/stop guards, 10-batch bounds, Mock English/Chinese/Arabic, confirmed History metadata, source evidence current-batch-only, parser null fields, wrapped JSON extraction, and invalid JSON rejection.
+- Phase 5 real API validation: passed with synthetic captions only. Three batches succeeded, correction handling passed, Simplified Chinese succeeded, Arabic succeeded after one invalid-JSON retry, and synthetic failure rollback passed.
+- Phase 5 physical desktop validation: still pending for live-caption streams, overlay placement/resize/collapse recording, and History UI inspection.

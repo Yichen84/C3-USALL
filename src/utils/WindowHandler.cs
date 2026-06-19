@@ -24,6 +24,8 @@ namespace LiveCaptionsTranslator.utils
             if (window == null || setting == null)
                 return Rect.Empty;
             string windowName = window.GetType().Name;
+            if (!setting.WindowBounds.ContainsKey(windowName))
+                return Rect.Empty;
             Rect bound = Rect.Parse(setting.WindowBounds[windowName]);
             return bound;
         }
