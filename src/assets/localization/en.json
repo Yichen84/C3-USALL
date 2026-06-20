@@ -181,6 +181,7 @@
   "ClearBridge.Error.NetworkError": "The provider could not be reached.",
   "ClearBridge.Error.InvalidJson": "The provider did not return valid JSON.",
   "ClearBridge.Error.EmptyResponse": "The provider returned an empty response.",
+  "ClearBridge.Error.OutputLanguageMismatch": "The provider did not follow the selected output language. Try again or choose a different model.",
   "ClearBridge.Error.Clipboard": "Could not copy to clipboard.",
   "ClearBridge.Error.Cancelled": "Analysis was cancelled.",
   "ClearBridge.Error.NoCaptionsAvailable": "No captions available.",

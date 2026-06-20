@@ -1161,3 +1161,69 @@ Freeze the planned ClearBridge/C3-USALL feature set, run final automated regress
 - Tag: `phase5-rolling-summary`
 - Commit hash: pending
 - Commit message: `docs(release): record final ClearBridge code freeze`
+
+## 2026-06-20 — P1 Output Language Enforcement Fix
+
+### Goal
+Fix a P1 regression where OpenAI-compatible ClearBridge structured analysis could return user-visible values in the input language instead of the selected output language.
+
+### Work Completed
+- Added canonical output-language normalization, including aliases such as `zh-CN` to `Simplified Chinese`.
+- Strengthened ClearBridge text, caption analysis, and rolling summary prompts with explicit output-language rules.
+- Required English snake_case JSON keys while requiring all user-visible JSON string values to use the selected output language.
+- Preserved `source_evidence.source_text` in the original input language and excluded it from language scoring.
+- Added local lightweight language validation for ClearBridge structured analysis and Rolling Summary.
+- Added one strict language retry for wrong-language provider output.
+- Added `tools/ClearBridgeOutputLanguageAudit`.
+- Updated localization for the new `OutputLanguageMismatch` error.
+- Updated the fixed local test package for manual API validation.
+
+### Files Changed
+- `src/services/ClearBridge/ClearBridgeOutputLanguages.cs`
+- `src/services/ClearBridge/ClearBridgeOutputLanguageValidator.cs`
+- `src/services/ClearBridge/CrisisActionPromptBuilder.cs`
+- `src/services/ClearBridge/OpenAiCrisisActionAnalysisProvider.cs`
+- `src/services/ClearBridge/OpenAiRollingSummaryProvider.cs`
+- `src/assets/localization/en.json`
+- `src/assets/localization/zh-Hans.json`
+- `src/assets/localization/ar.json`
+- `tools/ClearBridgeOutputLanguageAudit/ClearBridgeOutputLanguageAudit.csproj`
+- `tools/ClearBridgeOutputLanguageAudit/Program.cs`
+- `docs/OUTPUT_LANGUAGE_P1_FIX_REPORT.md`
+- `docs/HACKATHON_BUILD_LOG.md`
+
+### Technical Decisions
+- The fix rejects clearly wrong-language results instead of showing them as successful analysis.
+- The retry count is limited to one language retry to avoid loops and duplicate provider calls.
+- The local check is script-based and dependency-free to keep the patch small and low risk.
+- `source_evidence.source_text` is intentionally excluded because it must remain an exact quote from the original input.
+- The formal GitHub Release was not updated; this P1 package is for user manual validation first.
+
+### AI Tools Used
+- Codex: root-cause analysis, code patch, audit harness, build validation, and documentation.
+- ChatGPT: no new separate usage recorded in this pass.
+- Other AI: no real provider/API call was made by Codex during this automated validation pass.
+
+### External Services / Libraries
+- No external paid AI service was called in this pass.
+- Existing .NET SDK / WPF stack and local audit harnesses.
+
+### Tests Performed
+- `dotnet restore .\LiveCaptionsTranslator.sln`: passed.
+- `dotnet format .\LiveCaptionsTranslator.csproj --verify-no-changes --verbosity minimal`: passed.
+- `dotnet build .\LiveCaptionsTranslator.sln -c Release --no-restore`: passed with existing nullable warnings.
+- `dotnet run --project .\tools\Phase4CaptionAudit\Phase4CaptionAudit.csproj -c Release`: passed 10 checks.
+- `dotnet run --project .\tools\Phase5RollingSummaryAudit\Phase5RollingSummaryAudit.csproj -c Release`: passed 15 checks.
+- `dotnet run --project .\tools\ClearBridgeOutputLanguageAudit\ClearBridgeOutputLanguageAudit.csproj -c Release`: passed 12 checks.
+- `dotnet publish .\LiveCaptionsTranslator.csproj -c Release -r win-x64 --self-contained true`: passed.
+
+### Known Limitations
+- Manual real-provider API validation is still required before merge/release.
+- The lightweight detector is script-based and intentionally conservative.
+- Existing long-result mouse wheel limitation remains unchanged.
+- Local ignored migration-package sources can interfere with local SDK builds if left under the repository root; they were temporarily moved outside the repo for validation and restored afterward.
+
+### Git Evidence
+- Branch: `fix/clearbridge-output-language-enforcement`
+- Commit hash: pending
+- Commit message: pending

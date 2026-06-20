@@ -14,5 +14,21 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             SimplifiedChinese,
             Arabic
         ];
+
+        public static string Normalize(string outputLanguage)
+        {
+            var normalized = outputLanguage?.Trim();
+            if (string.IsNullOrWhiteSpace(normalized))
+                return string.Empty;
+
+            return normalized.ToLowerInvariant() switch
+            {
+                "en" or "en-us" or "en-gb" or "english" => English,
+                "zh" or "zh-cn" or "zh-hans" or "zh-hans-cn" or "chinese" or
+                    "simplified chinese" or "simplified-chinese" => SimplifiedChinese,
+                "ar" or "ar-sa" or "arabic" => Arabic,
+                _ => normalized
+            };
+        }
     }
 }

@@ -181,6 +181,7 @@
   "ClearBridge.Error.NetworkError": "تعذر الوصول إلى الموفر.",
   "ClearBridge.Error.InvalidJson": "لم يرجع الموفر JSON صالحا.",
   "ClearBridge.Error.EmptyResponse": "أرجع الموفر استجابة فارغة.",
+  "ClearBridge.Error.OutputLanguageMismatch": "لم يلتزم الموفر بلغة النتيجة المحددة. حاول مرة أخرى أو اختر نموذجا مختلفا.",
   "ClearBridge.Error.Clipboard": "تعذر النسخ إلى الحافظة.",
   "ClearBridge.Error.Cancelled": "تم إلغاء التحليل.",
   "ClearBridge.Error.NoCaptionsAvailable": "لا توجد تسميات متاحة للتحليل.",

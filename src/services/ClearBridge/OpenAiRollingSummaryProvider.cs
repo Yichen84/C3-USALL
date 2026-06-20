@@ -37,7 +37,8 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             try
             {
                 var previousContextJson = JsonSerializer.Serialize(request.PreviousContext, JsonOptions);
-                var systemPrompt = CrisisActionPromptBuilder.BuildRollingSummarySystemPrompt(outputLanguage);
+                var normalizedOutputLanguage = ClearBridgeOutputLanguages.Normalize(outputLanguage);
+                var systemPrompt = CrisisActionPromptBuilder.BuildRollingSummarySystemPrompt(normalizedOutputLanguage);
                 var userPrompt = CrisisActionPromptBuilder.BuildRollingSummaryUserPrompt(
                     previousContextJson,
                     request.BatchTranscript);
@@ -50,6 +51,33 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                     systemPrompt,
                     userPrompt,
                     timeoutCts.Token);
+                try
+                {
+                    ClearBridgeOutputLanguageValidator.EnsureRollingResultMatches(
+                        result,
+                        normalizedOutputLanguage);
+                }
+                catch (ClearBridgeAnalysisException ex) when (ex.ErrorCode == "OutputLanguageMismatch")
+                {
+                    LogDiagnostic(
+                        "LanguageRetry",
+                        started.ElapsedMilliseconds,
+                        request.CharacterCount,
+                        content.Length,
+                        ex.ErrorCode);
+
+                    var retryPrompt = CrisisActionPromptBuilder.BuildLanguageRetryUserPrompt(
+                        userPrompt,
+                        normalizedOutputLanguage);
+                    var retryContent = await SendChatRequestAsync(config!, systemPrompt, retryPrompt, timeoutCts.Token);
+                    responseText = retryContent;
+                    content = retryContent;
+                    result = RollingSummaryJsonParser.Parse(retryContent);
+                    ClearBridgeOutputLanguageValidator.EnsureRollingResultMatches(
+                        result,
+                        normalizedOutputLanguage);
+                }
+
                 CrisisActionSourceEvidenceSanitizer.KeepOnlyExactSourceEvidence(
                     ToCrisisResult(result),
                     request.BatchTranscript);

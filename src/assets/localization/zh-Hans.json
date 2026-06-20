@@ -181,6 +181,7 @@
   "ClearBridge.Error.NetworkError": "无法连接 Provider。",
   "ClearBridge.Error.InvalidJson": "Provider 没有返回有效 JSON。",
   "ClearBridge.Error.EmptyResponse": "Provider 返回了空响应。",
+  "ClearBridge.Error.OutputLanguageMismatch": "Provider 没有遵守所选输出语言。请重试或更换模型。",
   "ClearBridge.Error.Clipboard": "复制到剪贴板失败。",
   "ClearBridge.Error.Cancelled": "分析已取消。",
   "ClearBridge.Error.NoCaptionsAvailable": "没有可分析的字幕。",
