@@ -43,7 +43,15 @@ namespace LiveCaptionsTranslator.services.ClearBridge
             var responseText = string.Empty;
             try
             {
-                var response = await SendRequestAsync(config!, sourceText, outputLanguage, promptMode, timeoutCts.Token);
+                var normalizedOutputLanguage = ClearBridgeOutputLanguages.Normalize(outputLanguage);
+                var systemPrompt = promptMode == CrisisActionPromptMode.CaptionTranscript
+                    ? CrisisActionPromptBuilder.BuildCaptionSystemPrompt(normalizedOutputLanguage)
+                    : CrisisActionPromptBuilder.BuildSystemPrompt(normalizedOutputLanguage);
+                var userPrompt = promptMode == CrisisActionPromptMode.CaptionTranscript
+                    ? CrisisActionPromptBuilder.BuildCaptionUserPrompt(sourceText)
+                    : CrisisActionPromptBuilder.BuildUserPrompt(sourceText);
+
+                var response = await SendRequestAsync(config!, systemPrompt, userPrompt, timeoutCts.Token);
                 responseText = await response.Content.ReadAsStringAsync(timeoutCts.Token);
 
                 if (!response.IsSuccessStatusCode)
@@ -55,6 +63,36 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 var result = CrisisActionJsonParser.Parse(content);
                 if (promptMode == CrisisActionPromptMode.CaptionTranscript)
                     CrisisActionSourceEvidenceSanitizer.KeepOnlyExactSourceEvidence(result, sourceText);
+                try
+                {
+                    ClearBridgeOutputLanguageValidator.EnsureCrisisResultMatches(result, normalizedOutputLanguage);
+                }
+                catch (ClearBridgeAnalysisException ex) when (ex.ErrorCode == "OutputLanguageMismatch")
+                {
+                    LogDiagnostic(
+                        "LanguageRetry",
+                        started.ElapsedMilliseconds,
+                        sourceText.Length,
+                        content.Length,
+                        ex.ErrorCode);
+
+                    var retryPrompt = CrisisActionPromptBuilder.BuildLanguageRetryUserPrompt(
+                        userPrompt,
+                        normalizedOutputLanguage);
+                    var retryResponse = await SendRequestAsync(config!, systemPrompt, retryPrompt, timeoutCts.Token);
+                    responseText = await retryResponse.Content.ReadAsStringAsync(timeoutCts.Token);
+                    if (!retryResponse.IsSuccessStatusCode)
+                        throw new ClearBridgeAnalysisException(
+                            "HttpError",
+                            $"The provider returned HTTP {(int)retryResponse.StatusCode} ({retryResponse.StatusCode}).");
+
+                    content = ExtractAssistantContent(responseText);
+                    result = CrisisActionJsonParser.Parse(content);
+                    if (promptMode == CrisisActionPromptMode.CaptionTranscript)
+                        CrisisActionSourceEvidenceSanitizer.KeepOnlyExactSourceEvidence(result, sourceText);
+
+                    ClearBridgeOutputLanguageValidator.EnsureCrisisResultMatches(result, normalizedOutputLanguage);
+                }
 
                 LogDiagnostic("Completed", started.ElapsedMilliseconds, sourceText.Length, content.Length);
                 return result;
@@ -90,18 +128,10 @@ namespace LiveCaptionsTranslator.services.ClearBridge
 
         private static async Task<HttpResponseMessage> SendRequestAsync(
             OpenAIConfig config,
-            string sourceText,
-            string outputLanguage,
-            CrisisActionPromptMode promptMode,
+            string systemPrompt,
+            string userPrompt,
             CancellationToken cancellationToken)
         {
-            var systemPrompt = promptMode == CrisisActionPromptMode.CaptionTranscript
-                ? CrisisActionPromptBuilder.BuildCaptionSystemPrompt(outputLanguage)
-                : CrisisActionPromptBuilder.BuildSystemPrompt(outputLanguage);
-            var userPrompt = promptMode == CrisisActionPromptMode.CaptionTranscript
-                ? CrisisActionPromptBuilder.BuildCaptionUserPrompt(sourceText)
-                : CrisisActionPromptBuilder.BuildUserPrompt(sourceText);
-
             var requestData = new
             {
                 model = config.ModelName,

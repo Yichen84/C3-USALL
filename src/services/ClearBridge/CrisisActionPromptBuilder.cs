@@ -4,12 +4,11 @@ namespace LiveCaptionsTranslator.services.ClearBridge
     {
         public static string BuildSystemPrompt(string outputLanguage)
         {
+            var language = ClearBridgeOutputLanguages.Normalize(outputLanguage);
             return
                 "You are ClearBridge, a Crisis-to-Action Assistant. " +
                 "Turn the source text into a clear action plan for people who may be stressed, busy, or reading in a second language. " +
-                $"Write the analysis in {outputLanguage}. " +
-                "The output language applies to title, summary, priority explanation content, important_points, actions, unclear_items, warnings, and source_evidence.claim. " +
-                "Keep source_evidence.source_text as exact wording copied from the original source text; do not translate or paraphrase source_text. " +
+                BuildOutputLanguageRequirement(language) +
                 "Use simple, clear, unambiguous language. " +
                 "Do not add information that is not present in the source text. " +
                 "If information is unclear, missing, or cannot be confirmed, place it in unclear_items. " +
@@ -39,11 +38,11 @@ namespace LiveCaptionsTranslator.services.ClearBridge
 
         public static string BuildCaptionSystemPrompt(string outputLanguage)
         {
+            var language = ClearBridgeOutputLanguages.Normalize(outputLanguage);
             return
                 "You are ClearBridge, a Crisis-to-Action Assistant. " +
                 "The input is a numbered transcript from real-time captions. It may contain speech recognition errors, broken sentences, repeated partial phrases, and unfinished sentence fragments. " +
-                $"Write the analysis in {outputLanguage}. " +
-                "The output language applies to title, summary, priority explanation content, important_points, actions, unclear_items, warnings, and source_evidence.claim. " +
+                BuildOutputLanguageRequirement(language) +
                 "Keep source_evidence.source_text as exact wording copied from the caption transcript; do not translate or paraphrase source_text. " +
                 "If you cannot copy an exact contiguous substring from the selected transcript for a source_evidence item, leave source_text empty instead of inventing or paraphrasing it. " +
                 "Treat caption uncertainty carefully. Do not turn unclear captions into certain facts. " +
@@ -76,11 +75,13 @@ namespace LiveCaptionsTranslator.services.ClearBridge
 
         public static string BuildRollingSummarySystemPrompt(string outputLanguage)
         {
+            var language = ClearBridgeOutputLanguages.Normalize(outputLanguage);
             return
                 "You are ClearBridge, a Crisis-to-Action Assistant doing rolling analysis of real-time captions. " +
                 "The user enabled this mode manually. The input includes a compressed previous context and only the current new caption batch. " +
                 "Captions may contain recognition errors, unfinished sentences, repeated partial captions, and spoken corrections. " +
-                $"Write user-visible fields in {outputLanguage}. Keep source_evidence.source_text as exact wording copied from the current batch only; do not use compressed prior context as source evidence, and do not translate or paraphrase source_text. " +
+                BuildOutputLanguageRequirement(language) +
+                "Keep source_evidence.source_text as exact wording copied from the current batch only; do not use compressed prior context as source evidence, and do not translate or paraphrase source_text. " +
                 "Do not invent tasks, dates, locations, warnings, or decisions. Only write established_facts for information clearly supported by the input. " +
                 "Put uncertain or incomplete information in unresolved_questions. Distinguish examples, suggestions, formal assignments, confirmed decisions, and corrections. " +
                 "If a later caption corrects an earlier fact, keep the latest corrected fact and explain superseded information briefly. " +
@@ -103,6 +104,33 @@ namespace LiveCaptionsTranslator.services.ClearBridge
                 previousContextJson +
                 "\n\nCURRENT CAPTION BATCH:\n" +
                 currentBatchTranscript;
+        }
+
+        public static string BuildLanguageRetryUserPrompt(
+            string originalUserPrompt,
+            string outputLanguage)
+        {
+            var language = ClearBridgeOutputLanguages.Normalize(outputLanguage);
+            return
+                "Your previous response did not follow the required output language.\n\n" +
+                $"Rewrite all user-visible values in {language}.\n" +
+                "Keep JSON property names in English snake_case.\n" +
+                "Do not translate source_evidence.source_text.\n" +
+                "Return valid JSON only.\n\n" +
+                originalUserPrompt;
+        }
+
+        private static string BuildOutputLanguageRequirement(string outputLanguage)
+        {
+            var language = ClearBridgeOutputLanguages.Normalize(outputLanguage);
+            return
+                "OUTPUT LANGUAGE REQUIREMENT: " +
+                $"The selected output language is: {language}. " +
+                $"All user-visible JSON string values must be written in {language}, except source_evidence.source_text. " +
+                "Do not answer in the input language unless the selected output language is the same as the input language. " +
+                "Keep JSON property names in English snake_case exactly as specified by the schema; do not translate JSON keys. " +
+                "source_evidence.source_text must remain an exact quotation from the original input and must not be translated, rewritten, or summarized. " +
+                $"Before returning the JSON, verify that every user-visible value follows {language}. ";
         }
     }
 }
